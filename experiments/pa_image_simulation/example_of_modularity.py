@@ -11,26 +11,25 @@ from simpa.core import ImageReconstructionModuleDelayAndSumAdapter, GaussianNois
 from simpa.core.device_digital_twins import MSOTAcuityEcho, InVision256TF
 import os
 from utils.create_example_tissue import create_square_phantom
-import copy
+from utils.basic_settings import create_basic_reconstruction_settings, create_basic_optical_settings, \
+    create_basic_acoustic_settings
 
-VOLUME_TRANSDUCER_DIM_IN_MM = 75
+VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
-VOLUME_HEIGHT_IN_MM = 45
+VOLUME_HEIGHT_IN_MM = 90
 SPACING = 0.25
 RANDOM_SEED = 500
-loop_end = RANDOM_SEED + 1
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
 path_manager = PathManager()
 
-# WAVELENGTHS = list(np.arange(700, 855, 10))
 WAVELENGTHS = [800]
 SAVE_PATH = path_manager.get_hdf5_file_save_path()
+SAVE_PATH = os.path.join(SAVE_PATH, "Modularity_Examples")
+os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
 
-devices = {"MSOTAcuityEcho": MSOTAcuityEcho,
-           "InVision256TF": InVision256TF}
-recon_algorithms = {"DAS": ImageReconstructionModuleDelayAndSumAdapter,
-                    "TR": ReconstructionModuleTimeReversalAdapter}
+devices = {"InVision256TF": InVision256TF, "MSOTAcuityEcho": MSOTAcuityEcho}
+recon_algorithms = {"TR": ReconstructionModuleTimeReversalAdapter, "DAS": ImageReconstructionModuleDelayAndSumAdapter}
 # Seed the numpy random configuration prior to creating the global_settings file in
 # order to ensure that the same volume
 # is generated with the same random seed every time.
@@ -38,14 +37,13 @@ np.random.seed(RANDOM_SEED)
 for device_key, device in devices.items():
     for recon_algorithm_key, recon_algorithm in recon_algorithms.items():
 
-        VOLUME_NAME = "Modularity_example_{}_{}".format(device_key, recon_algorithm_key) + str(RANDOM_SEED)
-        os.makedirs(os.path.join(SAVE_PATH, VOLUME_NAME), exist_ok=True)
+        VOLUME_NAME = "Device_{}_Recon_{}_Seed_{}".format(device_key, recon_algorithm_key, RANDOM_SEED)
 
         general_settings = {
                     # These parameters set the general properties of the simulated volume
                     Tags.RANDOM_SEED: RANDOM_SEED,
                     Tags.VOLUME_NAME: VOLUME_NAME,
-                    Tags.SIMULATION_PATH: os.path.join(SAVE_PATH),
+                    Tags.SIMULATION_PATH: SAVE_PATH,
                     Tags.SPACING_MM: SPACING,
                     Tags.DIM_VOLUME_Z_MM: VOLUME_HEIGHT_IN_MM,
                     Tags.DIM_VOLUME_X_MM: VOLUME_TRANSDUCER_DIM_IN_MM,
@@ -63,82 +61,29 @@ for device_key, device in devices.items():
 
         })
 
-        settings.set_optical_settings({
-            Tags.OPTICAL_MODEL_NUMBER_PHOTONS: 5e7,
-            Tags.OPTICAL_MODEL_BINARY_PATH: path_manager.get_mcx_binary_path(),
-            Tags.LASER_PULSE_ENERGY_IN_MILLIJOULE: 50,
-            Tags.MCX_ASSUMED_ANISOTROPY: 0.9,
-        })
+        settings.set_optical_settings(create_basic_optical_settings(path_manager))
 
-        settings.set_acoustic_settings({
-            Tags.ACOUSTIC_SIMULATION_3D: False,
-            Tags.ACOUSTIC_MODEL_BINARY_PATH: path_manager.get_matlab_binary_path(),
-            Tags.PROPERTY_ALPHA_POWER: 0.00,
-            Tags.SENSOR_RECORD: "p",
-            Tags.PMLInside: False,
-            Tags.PMLSize: [31, 32],
-            Tags.PMLAlpha: 1.5,
-            Tags.PlotPML: False,
-            Tags.RECORDMOVIE: False,
-            Tags.MOVIENAME: "visualization_log",
-            Tags.ACOUSTIC_LOG_SCALE: True,
-            Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: False,
-            Tags.INITIAL_PRESSURE_SMOOTHING: False,
-        })
+        settings.set_acoustic_settings(create_basic_acoustic_settings(path_manager))
 
-        settings.set_reconstruction_settings({
-            Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING: False,
-            Tags.ACOUSTIC_MODEL_BINARY_PATH: path_manager.get_matlab_binary_path(),
-            # Tags.ACOUSTIC_SIMULATION_3D: True,
-            Tags.PROPERTY_ALPHA_POWER: 0.0,
-            Tags.TUKEY_WINDOW_ALPHA: 0.5,
-            Tags.BANDPASS_CUTOFF_LOWPASS: int(8e6),
-            Tags.BANDPASS_CUTOFF_HIGHPASS: int(0.1e6),
-            Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: True,
-            Tags.RECONSTRUCTION_BMODE_METHOD: Tags.RECONSTRUCTION_BMODE_METHOD_HILBERT_TRANSFORM,
-            Tags.RECONSTRUCTION_APODIZATION_METHOD: Tags.RECONSTRUCTION_APODIZATION_BOX,
-            Tags.RECONSTRUCTION_MODE: Tags.RECONSTRUCTION_MODE_DIFFERENTIAL,
-            Tags.SENSOR_RECORD: "p",
-            Tags.PMLInside: False,
-            Tags.PMLSize: [31, 32],
-            Tags.PMLAlpha: 1.5,
-            Tags.PlotPML: False,
-            Tags.RECORDMOVIE: False,
-            Tags.MOVIENAME: "visualization_log",
-            Tags.ACOUSTIC_LOG_SCALE: True,
-            Tags.PROPERTY_SPEED_OF_SOUND: 1540,
-            Tags.SPACING_MM: 0.1,
-            Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: False
-        })
+        settings.set_reconstruction_settings(
+            create_basic_reconstruction_settings(path_manager, reconstruction_spacing=settings[Tags.SPACING_MM]))
 
-        settings["noise_initial_pressure"] = {
-            Tags.NOISE_MEAN: 1,
-            Tags.NOISE_STD: 0.09,
-            Tags.NOISE_MODE: Tags.NOISE_MODE_MULTIPLICATIVE,
-            Tags.DATA_FIELD: Tags.OPTICAL_MODEL_INITIAL_PRESSURE,
-            Tags.NOISE_NON_NEGATIVITY_CONSTRAINT: True
-        }
-
-        settings["noise_time_series"] = {
-            Tags.NOISE_STD: 50,
-            Tags.NOISE_MODE: Tags.NOISE_MODE_ADDITIVE,
-            Tags.DATA_FIELD: Tags.TIME_SERIES_DATA
-        }
-
-        pa_device = device(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM/2,
-                                                        VOLUME_PLANAR_DIM_IN_MM/2,
-                                                        0]))
-        if isinstance(pa_device, MSOTAcuityEcho):
+        if device_key == "MSOTAcuityEcho":
+            pa_device = device(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM / 2,
+                                                            VOLUME_PLANAR_DIM_IN_MM / 2,
+                                                            0]))
             pa_device.update_settings_for_use_of_model_based_volume_creator(settings)
+        else:
+            pa_device = device(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM / 2,
+                                                            VOLUME_PLANAR_DIM_IN_MM / 2,
+                                                            VOLUME_HEIGHT_IN_MM / 2]))
 
         SIMUATION_PIPELINE = [
             VolumeCreationModelModelBasedAdapter(settings),
             OpticalForwardModelMcxAdapter(settings),
-            GaussianNoiseProcessingComponent(settings, "noise_initial_pressure"),
             AcousticForwardModelKWaveAdapter(settings),
-            GaussianNoiseProcessingComponent(settings, "noise_time_series"),
+            # FieldOfViewCroppingProcessingComponent(settings),
             recon_algorithm(settings),
-            FieldOfViewCroppingProcessingComponent(settings)
             ]
 
         import time
