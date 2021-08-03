@@ -1,2 +1,2 @@
 git+git://github.com/CAMI-DKFZ/simpa@master#egg=simpa
-memory_profiler
+git+git://github.com/pythonprofilers/memory_profiler#egg=memory_profiler

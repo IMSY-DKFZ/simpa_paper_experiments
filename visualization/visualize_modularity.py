@@ -5,7 +5,6 @@ import os
 path_manager = PathManager()
 SAVE_PATH = path_manager.get_hdf5_file_save_path()
 SAVE_PATH = os.path.join(SAVE_PATH, "Modularity_Examples")
-os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
 
 devices = ["InVision256TF", "MSOTAcuityEcho"]
 recon_algorithms = ["TR", "DAS"]
