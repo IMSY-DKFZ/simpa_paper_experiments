@@ -8,7 +8,6 @@ def read_memory_prof_file(path):
     df = df.to_numpy()
     memory_mb = df[:, 0]
     time_s = df[:, 1]
-    time_s = time_s - time_s[0]
 
     return time_s, memory_mb
 
