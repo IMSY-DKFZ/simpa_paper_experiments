@@ -17,7 +17,7 @@ from argparse import ArgumentParser
 import time
 
 parser = ArgumentParser()
-parser.add_argument("--spacing", type=float, default=0.2, help="Spacing for the simulation")
+parser.add_argument("--spacing", type=float, default=0.4, help="Spacing for the simulation")
 config = parser.parse_args()
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
@@ -33,7 +33,7 @@ SAVE_PATH = path_manager.get_hdf5_file_save_path()
 SAVE_PATH = os.path.join(SAVE_PATH, "Memory_Footprint")
 os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
 spacing = config.spacing
-logger = Logger(os.path.join(SAVE_PATH, "simpa_{}_{}.log".format(spacing, time.time())), force_new_instance=True)
+logger = Logger(os.path.join(SAVE_PATH, "simpa_{}.log".format(spacing)), force_new_instance=True)
 # Seed the numpy random configuration prior to creating the global_settings file in
 # order to ensure that the same volume
 # is generated with the same random seed every time.

@@ -23,6 +23,8 @@ if Test:
     output_dir = "/home/kris/Work/Repositories/simpa_paper_experiments/experiments/pa_image_simulation/tmp_memory_footprint"
     config.spacing_list = "0.4 0.35 0.2 0.15"
 
+
+color_list = [""]
 path_manager = PathManager()
 SAVE_PATH = os.path.join(path_manager.get_hdf5_file_save_path(), "Memory_Footprint")
 
@@ -30,7 +32,8 @@ spacing_list = config.spacing_list.split(" ")
 spacing_list = [float(i) for i in spacing_list]
 
 output_per_spacing, log_per_spacing = dict(), dict()
-for spacing in spacing_list:
+plt.figure()
+for sp, spacing in enumerate(spacing_list):
     log_file_list = glob.glob(os.path.join(SAVE_PATH, "simpa_{}*.log".format(spacing)))
     log_per_spacing[spacing] = dict()
     output_file_list = glob.glob(os.path.join(output_dir, "mem_spacing_{}*".format(spacing)))
@@ -50,12 +53,22 @@ for spacing in spacing_list:
             log_times[key] = value + diff
         output_per_spacing[spacing][run] = {"times": mem_times, "memory": memory}
         log_per_spacing[spacing][run] = log_times
-
-    plt.figure()
     plt.plot(output_per_spacing[spacing][run]["times"], output_per_spacing[spacing][run]["memory"])
+    previous_stop = 0
     for key, value in log_per_spacing[spacing][run].items():
+        # tt = output_per_spacing[spacing][run]["times"]
+        # max_time = tt[-1]
+        # tt = tt / max_time
+        # stop = value / max_time
+        # previous_stop = previous_stop / max_time
+        # points_in_gate = (previous_stop <= tt) & (tt < stop)
+        # plt.plot(tt[points_in_gate],
+        #          output_per_spacing[spacing][run]["memory"][points_in_gate], label=key)
         plt.axvline(x=value, label=key, c=np.random.rand(3, ))
-    plt.legend()
+        previous_stop = value
+    if sp == 0:
+        plt.legend()
+
     plt.show()
     plt.close()
 
