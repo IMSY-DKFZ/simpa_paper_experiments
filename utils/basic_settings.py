@@ -15,7 +15,7 @@ def create_basic_optical_settings(path_manager):
 def create_basic_acoustic_settings(path_manager):
 
     acoustic_settings = {
-        Tags.ACOUSTIC_SIMULATION_3D: True,
+        Tags.ACOUSTIC_SIMULATION_3D: False,
         Tags.ACOUSTIC_MODEL_BINARY_PATH: path_manager.get_matlab_binary_path(),
         Tags.PROPERTY_ALPHA_POWER: 0.00,
         Tags.SENSOR_RECORD: "p",

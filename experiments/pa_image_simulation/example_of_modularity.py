@@ -13,11 +13,12 @@ import os
 from utils.create_example_tissue import create_square_phantom
 from utils.basic_settings import create_basic_reconstruction_settings, create_basic_optical_settings, \
     create_basic_acoustic_settings
+from simpa.visualisation.matplotlib_data_visualisation import visualise_data
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 90
-SPACING = 0.25
+SPACING = 0.1
 RANDOM_SEED = 500
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
@@ -71,7 +72,7 @@ for device_key, device in devices.items():
         if device_key == "MSOTAcuityEcho":
             pa_device = device(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM / 2,
                                                             VOLUME_PLANAR_DIM_IN_MM / 2,
-                                                            0]))
+                                                            25]))
             pa_device.update_settings_for_use_of_model_based_volume_creator(settings)
         else:
             pa_device = device(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM / 2,
@@ -82,14 +83,25 @@ for device_key, device in devices.items():
             VolumeCreationModelModelBasedAdapter(settings),
             OpticalForwardModelMcxAdapter(settings),
             AcousticForwardModelKWaveAdapter(settings),
-            # FieldOfViewCroppingProcessingComponent(settings),
             recon_algorithm(settings),
+            FieldOfViewCroppingProcessingComponent(settings),
             ]
 
         import time
         timer = time.time()
         simulate(SIMUATION_PIPELINE, settings, pa_device)
-
+        VISUALIZE = True
+        if VISUALIZE:
+            visualise_data(path_to_hdf5_file=SAVE_PATH + "/" + VOLUME_NAME + ".hdf5",
+                           wavelength=WAVELENGTHS[0],
+                           show_time_series_data=False,
+                           show_initial_pressure=True,
+                           show_absorption=True,
+                           show_segmentation_map=False,
+                           show_tissue_density=False,
+                           show_reconstructed_data=True,
+                           show_fluence=False,
+                           log_scale=False)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")

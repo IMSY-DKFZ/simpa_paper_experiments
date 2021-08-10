@@ -10,7 +10,12 @@ else
   rm $tmp_dir/*
 fi
 
-spacing_list="0.4 0.35 0.2 0.15"
+min_spacing=0.1
+max_spacing=0.4
+step_spacing=0.01
+spacing_list=$(python3 -c "import numpy as np; print(np.arange($min_spacing, $max_spacing + $step_spacing, $step_spacing))")
+spacing_list=${spacing_list:1:-1}
+
 repeat_per_spacing=1
 
 
