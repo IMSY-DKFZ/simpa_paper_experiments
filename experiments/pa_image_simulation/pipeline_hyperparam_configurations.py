@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from simpa.utils import Tags
 
 from simpa.core.simulation import simulate
@@ -14,13 +15,15 @@ from utils.create_example_tissue import create_square_phantom
 from utils.basic_settings import create_basic_reconstruction_settings, create_basic_optical_settings, \
     create_basic_acoustic_settings
 from simpa.visualisation.matplotlib_data_visualisation import visualise_data
+from simpa.io_handling import load_data_field
+from skimage.transform import rescale
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 90
 RANDOM_SEED = 500
-# spacing_list = [0.3, 0.2, 0.1]
-spacing_list = [0.3]
+spacing_list = [0.35, 0.25, 0.15]
+# spacing_list = [0.3]
 hyperparam_list = ["Default",
                    Tags.MODEL_SENSOR_FREQUENCY_RESPONSE,
                    Tags.ACOUSTIC_SIMULATION_3D,
@@ -28,6 +31,7 @@ hyperparam_list = ["Default",
                    Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING,
                    Tags.RECONSTRUCTION_MODE_DIFFERENTIAL,
                    ]
+img_arr = list()
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
 path_manager = PathManager()
@@ -42,8 +46,11 @@ os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
 # is generated with the same random seed every time.
 np.random.seed(RANDOM_SEED)
 for spacing in spacing_list:
-    for hyperparam in hyperparam_list:
-        VOLUME_NAME = "Pipeline_{}_Spacing_{}_Seed_{}".format(hyperparam[0], spacing, RANDOM_SEED)
+    for i, hyperparam in enumerate(hyperparam_list):
+        VOLUME_NAME = "Pipeline_{}_Spacing_{}_Seed_{}".format(hyperparam[0]
+                                                              if isinstance(hyperparam, tuple)
+                                                              else hyperparam,
+                                                              spacing, RANDOM_SEED)
 
         general_settings = {
                     # These parameters set the general properties of the simulated volume
@@ -72,7 +79,7 @@ for spacing in spacing_list:
         settings.set_acoustic_settings(create_basic_acoustic_settings(path_manager))
 
         settings.set_reconstruction_settings(
-            create_basic_reconstruction_settings(path_manager, reconstruction_spacing=settings[Tags.SPACING_MM]))
+            create_basic_reconstruction_settings(path_manager, reconstruction_spacing=min(spacing_list)))
 
         pa_device = MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM / 2,
                                                                 VOLUME_PLANAR_DIM_IN_MM / 2,
@@ -98,20 +105,38 @@ for spacing in spacing_list:
 
         import time
         timer = time.time()
-        simulate(SIMUATION_PIPELINE, settings, pa_device)
-        VISUALIZE = True
-        if VISUALIZE:
-            visualise_data(path_to_hdf5_file=SAVE_PATH + "/" + VOLUME_NAME + ".hdf5",
-                           wavelength=WAVELENGTHS[0],
-                           show_time_series_data=False,
-                           show_initial_pressure=True,
-                           show_absorption=True,
-                           show_segmentation_map=False,
-                           show_tissue_density=False,
-                           show_reconstructed_data=True,
-                           show_fluence=False,
-                           log_scale=False,
-                           plot_title=hyperparam)
+        # simulate(SIMUATION_PIPELINE, settings, pa_device)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")
+
+        if i == 0:
+            p0 = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.OPTICAL_MODEL_INITIAL_PRESSURE, WAVELENGTHS[0])
+            p0 = rescale(p0, spacing/min(spacing_list), order=2, anti_aliasing=True)
+            norm_p0 = p0 / np.max(p0)
+            img_arr.append(norm_p0)
+
+        recon = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.RECONSTRUCTED_DATA, WAVELENGTHS[0])
+        recon[recon < 0] = 0
+        norm_recon = recon / np.max(recon)
+        img_arr.append(norm_recon)
+
+from mpl_toolkits.axes_grid1 import ImageGrid
+fig = plt.figure(figsize=(10, 5))
+hyperparam_list.insert(0, "Initial Pressure")
+img_grid = ImageGrid(fig, rect=111, nrows_ncols=(len(spacing_list), len(hyperparam_list)), axes_pad=0,
+                     cbar_mode="single", cbar_location="right")
+for i, gridax in enumerate(img_grid):
+    img = np.rot90(img_arr[i], -1)
+    # img_shape = img.shape
+    # img = img[:int(img_shape[0]/2), :]
+    im = gridax.imshow(img)
+    if i < len(hyperparam_list):
+        gridax.set_title(hyperparam_list[i][0] if isinstance(hyperparam_list[i], tuple) else hyperparam_list[i])
+    if i % len(hyperparam_list) == 0:
+        gridax.set_ylabel(f"Spacing {spacing_list[int(i / len(hyperparam_list))]}")
+
+img_grid.cbar_axes[0].colorbar(im)
+# plt.savefig(SAVE_PATH + "/hyperparam_grid.svg")
+plt.show()
+
