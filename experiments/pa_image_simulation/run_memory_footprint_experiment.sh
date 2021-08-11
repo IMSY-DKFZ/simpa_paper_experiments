@@ -3,14 +3,8 @@
 current_dir=$(pwd)
 tmp_dir="$current_dir/tmp_memory_footprint"
 mkdir -p $tmp_dir
-if [ $1 = "c" ]
-then
-  :
-else
-  rm $tmp_dir/*
-fi
 
-min_spacing=0.1
+min_spacing=0.39
 max_spacing=0.4
 step_spacing=0.01
 spacing_list=$(python3 -c "import numpy as np; print(np.arange($min_spacing, $max_spacing + $step_spacing, $step_spacing))")
@@ -23,6 +17,12 @@ for spacing in $spacing_list
 do
   for (( i=0; i < $repeat_per_spacing; ++i ))
   do
+    if [ $1 = "c" ]
+    then
+      :
+    else
+      rm "$tmp_dir/mem_spacing_$spacing-run_$i.csv"
+    fi
     mprof run --output "$tmp_dir/mem_spacing_$spacing-run_$i.csv" --interval 0.01 memory_footprint.py --spacing $spacing
   done
 done
