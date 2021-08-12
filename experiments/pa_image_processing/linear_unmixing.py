@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2021 VISION Lab, Cancer Research UK Cambridge Institute 
 SPDX-License-Identifier: MIT
 """
 
-from simpa.utils import Tags, TISSUE_LIBRARY
+from simpa.utils import Tags, TISSUE_LIBRARY, SegmentationClasses
 from simpa.core.simulation import simulate
 from simpa.algorithms.multispectral.linear_unmixing import LinearUnmixingProcessingComponent
 import numpy as np
@@ -20,6 +20,9 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
 path_manager = PathManager()
+SAVE_PATH = path_manager.get_hdf5_file_save_path()
+SAVE_PATH = os.path.join(SAVE_PATH, "Linear_Unmixing")
+os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
 
 # set global params characterizing the simulated volume
 VOLUME_TRANSDUCER_DIM_IN_MM = 75
@@ -27,10 +30,10 @@ VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 25
 SPACING = 0.5
 RANDOM_SEED = 471
-VOLUME_NAME = "LinearUnmixingExample_" + str(RANDOM_SEED)
+VOLUME_NAME = "LinearUnmixing_" + str(RANDOM_SEED)
 
 # since we want to perform linear unmixing, the simulation pipeline should be execute for at least two wavelengths
-WAVELENGTHS = [750, 800, 850]
+WAVELENGTHS = list(np.arange(700, 950, 10))
 
 
 def create_example_tissue():
@@ -92,7 +95,7 @@ general_settings = {
     # These parameters set the general properties of the simulated volume
     Tags.RANDOM_SEED: RANDOM_SEED,
     Tags.VOLUME_NAME: VOLUME_NAME,
-    Tags.SIMULATION_PATH: path_manager.get_hdf5_file_save_path(),
+    Tags.SIMULATION_PATH: SAVE_PATH,
     Tags.SPACING_MM: SPACING,
     Tags.DIM_VOLUME_Z_MM: VOLUME_HEIGHT_IN_MM,
     Tags.DIM_VOLUME_X_MM: VOLUME_TRANSDUCER_DIM_IN_MM,
@@ -117,11 +120,13 @@ settings.set_optical_settings({
 # In this example we are only interested in the chromophore concentration of oxy- and deoxyhemoglobin and the
 # resulting blood oxygen saturation. We want to perform the algorithm using all three wavelengths defined above.
 # Please take a look at the component for more information.
+wavelengths_to_unmix = [750, 800, 850]
+
 settings["linear_unmixing"] = {
     Tags.DATA_FIELD: Tags.OPTICAL_MODEL_INITIAL_PRESSURE,
-    Tags.WAVELENGTHS: WAVELENGTHS,
-    Tags.LINEAR_UNMIXING_OXYHEMOGLOBIN: WAVELENGTHS,
-    Tags.LINEAR_UNMIXING_DEOXYHEMOGLOBIN: WAVELENGTHS,
+    Tags.WAVELENGTHS: wavelengths_to_unmix,
+    Tags.LINEAR_UNMIXING_OXYHEMOGLOBIN: wavelengths_to_unmix,
+    Tags.LINEAR_UNMIXING_DEOXYHEMOGLOBIN: wavelengths_to_unmix,
     Tags.LINEAR_UNMIXING_COMPUTE_SO2: True
 }
 
@@ -137,19 +142,42 @@ pipeline = [
     OpticalForwardModelMcxAdapter(settings),
     FieldOfViewCroppingProcessingComponent(settings),
 ]
-simulate(pipeline, settings, device)
+# simulate(pipeline, settings, device)
 
 # Run linear unmixing component with above specified settings.
+file_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
+settings[Tags.SIMPA_OUTPUT_PATH] = file_path
 LinearUnmixingProcessingComponent(settings, "linear_unmixing").run()
 
 # Load linear unmixing result (blood oxygen saturation) and reference absorption for first wavelength.
-file_path = path_manager.get_hdf5_file_save_path() + "/" + VOLUME_NAME + ".hdf5"
 lu_results = load_data_field(file_path, Tags.LINEAR_UNMIXING_RESULT)
 sO2 = lu_results["sO2"]
+
 
 mua = load_data_field(file_path, Tags.PROPERTY_ABSORPTION_PER_CM, wavelength=WAVELENGTHS[0])
 p0 = load_data_field(file_path, Tags.OPTICAL_MODEL_INITIAL_PRESSURE, wavelength=WAVELENGTHS[0])
 gt_oxy = load_data_field(file_path, Tags.PROPERTY_OXYGENATION, wavelength=WAVELENGTHS[0])
+seg = load_data_field(file_path, Tags.PROPERTY_SEGMENTATION)
+vessel_mask = (seg == SegmentationClasses.BLOOD)
+
+PLOT_SPECTRA = False
+if PLOT_SPECTRA:
+    mua_spectrum, p0_spectrum = list(), list()
+    example_coordinate = [72, 6]
+    for wavelength in WAVELENGTHS:
+        mua_spectrum.append(load_data_field(file_path, Tags.PROPERTY_ABSORPTION_PER_CM,
+                                            wavelength=wavelength)[example_coordinate[0], example_coordinate[1]])
+        p0_spectrum.append(load_data_field(file_path, Tags.OPTICAL_MODEL_INITIAL_PRESSURE,
+                                           wavelength=wavelength)[example_coordinate[0], example_coordinate[1]])
+
+    mua_spectrum = np.array(mua_spectrum) / max(mua_spectrum)
+    p0_spectrum = np.array(p0_spectrum) / max(p0_spectrum)
+    plt.plot(WAVELENGTHS, mua_spectrum, label="Absorption")
+    plt.plot(WAVELENGTHS, p0_spectrum, label="Initial Pressure")
+    plt.legend()
+    plt.show()
+    plt.close()
+
 
 # Visualize linear unmixing result
 data_shape = mua.shape
@@ -160,18 +188,21 @@ if len(data_shape) == 3:
     sO2 = sO2[:, y_dim, :]
     gt_oxy = gt_oxy[:, y_dim, :]
 
-plt.figure(figsize=(15, 5))
+for image in [gt_oxy, sO2]:
+    image[np.logical_not(vessel_mask)] = 0
+
+plt.figure(figsize=(15, 3))
 plt.suptitle("Linear Unmixing")
 plt.subplot(1, 3, 1)
-plt.title("Initial Pressure")
-plt.imshow(np.rot90(p0, -1))
-plt.colorbar(fraction=0.05)
-plt.subplot(1, 3, 2)
 plt.title("Ground Truth Blood oxygen saturation")
 gt_im = plt.imshow(np.rot90(gt_oxy, -1))
-plt.colorbar(fraction=0.05)
-plt.subplot(1, 3, 3)
+plt.colorbar(fraction=0.02)
+plt.subplot(1, 3, 2)
 plt.title("Blood oxygen saturation")
 plt.imshow(np.rot90(sO2, -1))
-plt.colorbar(gt_im, fraction=0.05)
+plt.colorbar(gt_im, fraction=0.02)
+plt.subplot(1, 3, 3)
+plt.title("Error")
+plt.imshow((np.rot90(gt_oxy, -1) - np.rot90(sO2, -1)), cmap="seismic", vmin=-1, vmax=1)
+plt.colorbar(fraction=0.02)
 plt.show()
