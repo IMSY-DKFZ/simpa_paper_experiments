@@ -19,16 +19,15 @@ from simpa.core import VolumeCreationModelModelBasedAdapter, OpticalForwardModel
     GaussianNoiseProcessingComponent
 from simpa.algorithms.monospectral.iterative_qPAI_algorithm import IterativeqPAIProcessingComponent
 from simpa.utils.path_manager import PathManager
-from simpa.core.device_digital_twins import PhotoacousticDevice, PencilBeamIlluminationGeometry, GaussianBeamIlluminationGeometry
+from simpa.core.device_digital_twins import PhotoacousticDevice, PencilBeamIlluminationGeometry, GaussianBeamIlluminationGeometry, DiskIlluminationGeometry
 from utils.create_example_tissue import create_qPAI_phantom
+from utils.save_directory import get_save_path
 
 
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
 path_manager = PathManager()
-SAVE_PATH = path_manager.get_hdf5_file_save_path()
-SAVE_PATH = os.path.join(SAVE_PATH, "qPAI_Algorithm")
-os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
+SAVE_PATH = get_save_path("pa_image_processing", "qPai_algorithm")
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 12
 VOLUME_PLANAR_DIM_IN_MM = 10
@@ -66,7 +65,8 @@ settings.set_optical_settings({
     Tags.OPTICAL_MODEL_NUMBER_PHOTONS: 1e7,
     Tags.OPTICAL_MODEL_BINARY_PATH: path_manager.get_mcx_binary_path(),
     Tags.OPTICAL_MODEL: Tags.OPTICAL_MODEL_MCX,
-    Tags.LASER_PULSE_ENERGY_IN_MILLIJOULE: 50
+    Tags.LASER_PULSE_ENERGY_IN_MILLIJOULE: 50,
+    Tags.MCX_ASSUMED_ANISOTROPY: 0.8
 })
 settings["noise_model"] = {
     Tags.NOISE_MEAN: 1.0,
@@ -102,7 +102,7 @@ class CustomDevice(PhotoacousticDevice):
         super(CustomDevice, self).__init__(device_position_mm=np.asarray([general_settings[Tags.DIM_VOLUME_X_MM] / 2,
                                                                           general_settings[Tags.DIM_VOLUME_Y_MM] / 2,
                                                                           0]))
-        self.add_illumination_geometry(GaussianBeamIlluminationGeometry())
+        self.add_illumination_geometry(DiskIlluminationGeometry(beam_radius_mm=2))
 
 
 device = CustomDevice()
@@ -129,6 +129,8 @@ if VISUALIZE:
     # rescale ground truth to same dimension as reconstruction (necessary due to resampling in iterative algorithm)
     scale = np.shape(absorption_reconstruction)[0] / np.shape(absorption_gt)[0]  # same as Tags.DOWNSCALE_FACTOR
     absorption_gt = zoom(absorption_gt, scale, order=0, mode="nearest")
+    # fluence = zoom(fluence, scale, order=0, mode="nearest")
+
 
     # compute reconstruction error
     difference = absorption_gt - absorption_reconstruction
@@ -157,12 +159,12 @@ if VISUALIZE:
     label = ["Absorption coefficients: ${\mu_a}^{gt}$", "Reconstruction: ${\mu_a}^{reconstr.}$",
              "Difference: ${\mu_a}^{gt} - {\mu_a}^{reconstr.}$"]
 
-    plt.figure(figsize=(20, 15))
-    plt.subplots_adjust(hspace=0.5)
-    plt.suptitle("Iterative qPAI Reconstruction \n median error = " + str(np.round(median_error, 4)) +
-                 "\n IQR = " + str(np.round(iqr, 4)), fontsize=10)
+    plt.figure(figsize=(20, 8))
+    # plt.subplots_adjust(hspace=0.5)
+    # plt.suptitle("Iterative qPAI Reconstruction \n median error = " + str(np.round(median_error, 4)) +
+    #              "\n IQR = " + str(np.round(iqr, 4)), fontsize=10)
 
-    cmap = "viridis"
+    cmap = "jet"
 
     for i, quantity in enumerate(results_x_z):
         plt.subplot(1, len(results_x_z) + 1, i + 1)
@@ -174,12 +176,14 @@ if VISUALIZE:
         plt.imshow(np.rot90(quantity, -1), cmap=cmap)
         plt.xticks(fontsize=6)
         plt.yticks(fontsize=6)
-        plt.colorbar()
+        plt.colorbar(fraction=0.05)
         if i != 2:
             plt.clim(cmin, cmax)
         else:
             plt.clim(np.min(difference), np.max(difference))
-    plt.subplot(1, len(results_x_z) + 1, i+1)
-    plt.imshow(fluence[:, y_pos, :])
+    plt.subplot(1, len(results_x_z) + 1, i+2)
+    plt.imshow(np.rot90(fluence[:, y_pos, :], -1), cmap="jet")
+    plt.title("Fluence")
+    plt.colorbar(fraction=0.05)
     plt.show()
     plt.close()

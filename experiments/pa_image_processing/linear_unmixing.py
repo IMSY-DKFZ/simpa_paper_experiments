@@ -13,6 +13,7 @@ from simpa.utils.path_manager import PathManager
 from simpa.io_handling import load_data_field
 from simpa.core.device_digital_twins import MSOTAcuityEcho
 import matplotlib.pyplot as plt
+from utils.save_directory import get_save_path
 # FIXME temporary workaround for newest Intel architectures
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -20,9 +21,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
 path_manager = PathManager()
-SAVE_PATH = path_manager.get_hdf5_file_save_path()
-SAVE_PATH = os.path.join(SAVE_PATH, "Linear_Unmixing")
-os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
+SAVE_PATH = get_save_path("pa_image_processing", "qPai_algorithm")
 
 # set global params characterizing the simulated volume
 VOLUME_TRANSDUCER_DIM_IN_MM = 75

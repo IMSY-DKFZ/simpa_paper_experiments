@@ -1,5 +1,6 @@
 # tmp folders for experiments
-
+/output_data/
+*output_data/*
 tmp_memory_footprint
 
 # docs build artifacts

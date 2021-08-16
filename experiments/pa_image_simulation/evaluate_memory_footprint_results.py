@@ -5,10 +5,8 @@ from simpa.utils import PathManager
 from utils.read_log_file import get_times_from_log_file
 from utils.read_memory_profile import read_memory_prof_file
 import matplotlib.pyplot as plt
-import numpy as np
-import time
-import math
-from datetime import datetime, timedelta
+from datetime import datetime
+from utils.save_directory import get_save_path
 
 parser = ArgumentParser()
 parser.add_argument("--spacing_list", default="0.2", type=str)
@@ -26,8 +24,7 @@ if Test:
 
 
 color_list = [""]
-path_manager = PathManager()
-SAVE_PATH = os.path.join(path_manager.get_hdf5_file_save_path(), "Memory_Footprint")
+SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
 
 spacing_list = config.spacing_list.split(" ")
 spacing_list = [float(i) for i in spacing_list]

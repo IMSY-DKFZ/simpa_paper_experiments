@@ -15,6 +15,7 @@ from utils.basic_settings import create_basic_reconstruction_settings, create_ba
     create_basic_acoustic_settings
 from argparse import ArgumentParser
 import time
+from utils.save_directory import get_save_path
 
 parser = ArgumentParser()
 parser.add_argument("--spacing", type=float, default=0.4, help="Spacing for the simulation")
@@ -29,9 +30,7 @@ RANDOM_SEED = 500
 path_manager = PathManager()
 
 WAVELENGTHS = [800]
-SAVE_PATH = path_manager.get_hdf5_file_save_path()
-SAVE_PATH = os.path.join(SAVE_PATH, "Memory_Footprint")
-os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
+SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
 spacing = config.spacing
 logger = Logger(os.path.join(SAVE_PATH, "simpa_{}.log".format(spacing)), force_new_instance=True)
 # Seed the numpy random configuration prior to creating the global_settings file in

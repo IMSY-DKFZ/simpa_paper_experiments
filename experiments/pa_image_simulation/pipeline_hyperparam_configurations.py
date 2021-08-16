@@ -17,6 +17,7 @@ from utils.basic_settings import create_basic_reconstruction_settings, create_ba
 from simpa.visualisation.matplotlib_data_visualisation import visualise_data
 from simpa.io_handling import load_data_field
 from skimage.transform import rescale
+from utils.save_directory import get_save_path
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
@@ -37,9 +38,7 @@ img_arr = list()
 path_manager = PathManager()
 
 WAVELENGTHS = [800]
-SAVE_PATH = path_manager.get_hdf5_file_save_path()
-SAVE_PATH = os.path.join(SAVE_PATH, "Hyperparameter_Configurations")
-os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
+SAVE_PATH = get_save_path("pa_image_simulation", "Hyperparameter_Configurations")
 
 # Seed the numpy random configuration prior to creating the global_settings file in
 # order to ensure that the same volume
@@ -105,7 +104,7 @@ for spacing in spacing_list:
 
         import time
         timer = time.time()
-        # simulate(SIMUATION_PIPELINE, settings, pa_device)
+        simulate(SIMUATION_PIPELINE, settings, pa_device)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")

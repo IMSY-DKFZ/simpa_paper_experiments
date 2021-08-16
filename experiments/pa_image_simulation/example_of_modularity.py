@@ -14,6 +14,7 @@ from utils.create_example_tissue import create_square_phantom
 from utils.basic_settings import create_basic_reconstruction_settings, create_basic_optical_settings, \
     create_basic_acoustic_settings
 from simpa.visualisation.matplotlib_data_visualisation import visualise_data
+from utils.save_directory import get_save_path
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
@@ -25,9 +26,7 @@ RANDOM_SEED = 500
 path_manager = PathManager()
 
 WAVELENGTHS = [800]
-SAVE_PATH = path_manager.get_hdf5_file_save_path()
-SAVE_PATH = os.path.join(SAVE_PATH, "Modularity_Examples")
-os.makedirs(os.path.join(SAVE_PATH), exist_ok=True)
+SAVE_PATH = get_save_path("pa_image_simulation", "Modularity_Examples")
 
 devices = {"InVision256TF": InVision256TF, "MSOTAcuityEcho": MSOTAcuityEcho}
 recon_algorithms = {"TR": ReconstructionModuleTimeReversalAdapter, "DAS": ImageReconstructionModuleDelayAndSumAdapter}
