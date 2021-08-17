@@ -107,8 +107,6 @@ class CustomDevice(PhotoacousticDevice):
 
 device = CustomDevice()
 
-device.update_settings_for_use_of_model_based_volume_creator(settings)
-
 simulate(pipeline, settings, device)
 
 # visualize reconstruction results
@@ -143,15 +141,8 @@ if VISUALIZE:
     x_pos = int(np.shape(absorption_gt)[0] / 2)
     y_pos = int(np.shape(absorption_gt)[1] / 2)
 
-    if np.min(absorption_gt) > np.min(absorption_reconstruction):
-        cmin = np.min(absorption_reconstruction)
-    else:
-        cmin = np.min(absorption_gt)
-
-    if np.max(absorption_gt) > np.max(absorption_reconstruction):
-        cmax = np.max(absorption_gt)
-    else:
-        cmax = np.max(absorption_reconstruction)
+    cmin = np.min(absorption_gt)
+    cmax = np.max(absorption_gt)
 
     results_x_z = [absorption_gt[:, y_pos, :], absorption_reconstruction[:, y_pos, :], difference[:, y_pos, :]]
     results_y_z = [absorption_gt[x_pos, :, :], absorption_reconstruction[x_pos, :, :], difference[x_pos, :, :]]
@@ -177,7 +168,7 @@ if VISUALIZE:
         plt.xticks(fontsize=6)
         plt.yticks(fontsize=6)
         plt.colorbar(fraction=0.05)
-        if i != 2:
+        if i in [0, 1]:
             plt.clim(cmin, cmax)
         else:
             plt.clim(np.min(difference), np.max(difference))

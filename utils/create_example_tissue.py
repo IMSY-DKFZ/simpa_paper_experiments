@@ -4,75 +4,70 @@ from simpa.utils.libraries.structure_library import *
 
 
 def create_square_phantom(settings):
-    """
-    This is a very simple example script of how to create a tissue definition.
-    It contains a muscular background, an epidermis layer on top of the muscles
-    and a blood vessel.
-    """
+    x_dim = settings[Tags.DIM_VOLUME_X_MM]
+    y_dim = settings[Tags.DIM_VOLUME_Y_MM]
+    z_dim = settings[Tags.DIM_VOLUME_Z_MM]
+
     background_dictionary = Settings()
     background_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.constant(1e-10, 1e-10, 1.0)
     background_dictionary[Tags.STRUCTURE_TYPE] = Tags.BACKGROUND
 
-    water_dictionary = Settings()
-    water_dictionary[Tags.PRIORITY] = 2
-    water_dictionary[Tags.STRUCTURE_START_MM] = [0, 0, 0]
-    water_dictionary[Tags.STRUCTURE_END_MM] = [0, 0, 100]
-    water_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.heavy_water()
-    water_dictionary[Tags.CONSIDER_PARTIAL_VOLUME] = True
-    water_dictionary[Tags.ADHERE_TO_DEFORMATION] = False
-    water_dictionary[Tags.STRUCTURE_TYPE] = Tags.HORIZONTAL_LAYER_STRUCTURE
+    water_dictionary = define_horizontal_layer_structure_settings(
+        priority=2,
+        molecular_composition=TISSUE_LIBRARY.heavy_water(),
+        z_start_mm=0,
+        thickness_mm=z_dim,
+        consider_partial_volume=True,
+        adhere_to_deformation=False
+    )
 
-    epidermis_dictionary = Settings()
-    epidermis_dictionary[Tags.PRIORITY] = 3
-    epidermis_dictionary[Tags.STRUCTURE_START_MM] = [28, 0, 28]#[28, 0, 29.5]
-    epidermis_dictionary[Tags.STRUCTURE_X_EXTENT_MM] = 34#33.2
-    epidermis_dictionary[Tags.STRUCTURE_Y_EXTENT_MM] = 20#19.8
-    epidermis_dictionary[Tags.STRUCTURE_Z_EXTENT_MM] = 34#33.2
-    epidermis_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.epidermis()
-    epidermis_dictionary[Tags.CONSIDER_PARTIAL_VOLUME] = True
-    epidermis_dictionary[Tags.ADHERE_TO_DEFORMATION] = False
-    epidermis_dictionary[Tags.STRUCTURE_TYPE] = Tags.RECTANGULAR_CUBOID_STRUCTURE
+    epidermis_dictionary = define_rectangular_cuboid_structure_settings(
+        priority=3,
+        molecular_composition=TISSUE_LIBRARY.epidermis(),
+        start_mm=[28, 0, 28],
+        extent_mm=[34, 20, 34],
+        consider_partial_volume=True,
+        adhere_to_deformation=False
+    )
 
-    muscle_dictionary = Settings()
-    muscle_dictionary[Tags.PRIORITY] = 5
-    muscle_dictionary[Tags.STRUCTURE_START_MM] = [28.1, 0, 28.1]#[28.1, 0, 29.6]
-    muscle_dictionary[Tags.STRUCTURE_X_EXTENT_MM] = 33.8#33
-    muscle_dictionary[Tags.STRUCTURE_Y_EXTENT_MM] = 19.8#19
-    muscle_dictionary[Tags.STRUCTURE_Z_EXTENT_MM] = 33.8#33
-    muscle_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.constant(0.05, 100, 0.9)
-    muscle_dictionary[Tags.CONSIDER_PARTIAL_VOLUME] = True
-    muscle_dictionary[Tags.ADHERE_TO_DEFORMATION] = False
-    muscle_dictionary[Tags.STRUCTURE_TYPE] = Tags.RECTANGULAR_CUBOID_STRUCTURE
+    muscle_dictionary = define_rectangular_cuboid_structure_settings(
+        priority=5,
+        molecular_composition=TISSUE_LIBRARY.constant(0.05, 100, 0.9),
+        start_mm=[28.1, 0, 28.1],
+        extent_mm=[33.8, 19.8, 33.8],
+        consider_partial_volume=True,
+        adhere_to_deformation=False
+    )
 
-    vessel_1_dictionary = Settings()
-    vessel_1_dictionary[Tags.PRIORITY] = 8
-    vessel_1_dictionary[Tags.STRUCTURE_START_MM] = [settings[Tags.DIM_VOLUME_X_MM]/2 + 10, 0, settings[Tags.DIM_VOLUME_Z_MM]/2 + 10]
-    vessel_1_dictionary[Tags.STRUCTURE_END_MM] = [settings[Tags.DIM_VOLUME_X_MM]/2 + 10, settings[Tags.DIM_VOLUME_Y_MM], settings[Tags.DIM_VOLUME_Z_MM]/2 + 10]
-    vessel_1_dictionary[Tags.STRUCTURE_RADIUS_MM] = 3
-    vessel_1_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.blood()
-    vessel_1_dictionary[Tags.CONSIDER_PARTIAL_VOLUME] = True
-    vessel_1_dictionary[Tags.ADHERE_TO_DEFORMATION] = False
-    vessel_1_dictionary[Tags.STRUCTURE_TYPE] = Tags.CIRCULAR_TUBULAR_STRUCTURE
+    vessel_1_dictionary = define_circular_tubular_structure_settings(
+        priority=8,
+        molecular_composition=TISSUE_LIBRARY.blood(),
+        tube_start_mm=[x_dim/2 + 10, 0, z_dim/2 + 10],
+        tube_end_mm=[x_dim/2 + 10, y_dim, z_dim/2 + 10],
+        radius_mm=3,
+        consider_partial_volume=True,
+        adhere_to_deformation=False
+    )
 
-    vessel_2_dictionary = Settings()
-    vessel_2_dictionary[Tags.PRIORITY] = 8
-    vessel_2_dictionary[Tags.STRUCTURE_START_MM] = [settings[Tags.DIM_VOLUME_X_MM]/2 - 10, 0, settings[Tags.DIM_VOLUME_Z_MM]/2 - 10]
-    vessel_2_dictionary[Tags.STRUCTURE_END_MM] = [settings[Tags.DIM_VOLUME_X_MM]/2 - 10, settings[Tags.DIM_VOLUME_Y_MM], settings[Tags.DIM_VOLUME_Z_MM]/2 - 10]
-    vessel_2_dictionary[Tags.STRUCTURE_RADIUS_MM] = 2
-    vessel_2_dictionary[Tags.STRUCTURE_ECCENTRICITY] = 0.8
-    vessel_2_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.blood()
-    vessel_2_dictionary[Tags.CONSIDER_PARTIAL_VOLUME] = False
-    vessel_2_dictionary[Tags.STRUCTURE_TYPE] = Tags.ELLIPTICAL_TUBULAR_STRUCTURE
+    vessel_2_dictionary = define_elliptical_tubular_structure_settings(
+        priority=8,
+        molecular_composition=TISSUE_LIBRARY.blood(),
+        tube_start_mm=[x_dim/2 - 10, 0, z_dim/2 - 10],
+        tube_end_mm=[x_dim/2 - 10, y_dim, z_dim/2 - 10],
+        radius_mm=3,
+        eccentricity=0.8,
+        consider_partial_volume=True,
+        adhere_to_deformation=False
+    )
 
-    inclusion_1_dictionary = Settings()
-    inclusion_1_dictionary[Tags.PRIORITY] = 8
-    inclusion_1_dictionary[Tags.STRUCTURE_START_MM] = [30, 0, 50]
-    inclusion_1_dictionary[Tags.STRUCTURE_X_EXTENT_MM] = 5
-    inclusion_1_dictionary[Tags.STRUCTURE_Y_EXTENT_MM] = 20
-    inclusion_1_dictionary[Tags.STRUCTURE_Z_EXTENT_MM] = 8
-    inclusion_1_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.blood()
-    inclusion_1_dictionary[Tags.CONSIDER_PARTIAL_VOLUME] = False
-    inclusion_1_dictionary[Tags.STRUCTURE_TYPE] = Tags.RECTANGULAR_CUBOID_STRUCTURE
+    inclusion_1_dictionary = define_rectangular_cuboid_structure_settings(
+        priority=8,
+        molecular_composition=TISSUE_LIBRARY.blood(),
+        start_mm=[30, 0, 50],
+        extent_mm=[50, 20, 8],
+        consider_partial_volume=False,
+        adhere_to_deformation=False
+    )
 
     inclusion_2_dictionary = define_parallelepiped_structure_settings(start_mm=[50, 0, 30],
                                                                       edge_a_mm=[-8, 0, 5],
@@ -145,4 +140,51 @@ def create_qPAI_phantom(settings):
     tissue_dict["vessel_1"] = vessel_1_dictionary
     tissue_dict["vessel_2"] = vessel_2_dictionary
     tissue_dict["inclusion"] = inclusion_dictionary
+    return tissue_dict
+
+
+def create_linear_unmixing_phantom(settings):
+    x_dim = settings[Tags.DIM_VOLUME_X_MM]
+    y_dim = settings[Tags.DIM_VOLUME_Y_MM]
+    z_dim = settings[Tags.DIM_VOLUME_Z_MM]
+
+    background_dictionary = Settings()
+    background_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.constant(1e-4, 1e-4, 0.9)
+    background_dictionary[Tags.STRUCTURE_TYPE] = Tags.BACKGROUND
+
+    muscle_dictionary = define_horizontal_layer_structure_settings(
+        priority=1,
+        molecular_composition=TISSUE_LIBRARY.constant(0.5, 10, 0.9),
+        z_start_mm=0,
+        thickness_mm=z_dim,
+        consider_partial_volume=True,
+        adhere_to_deformation=True
+    )
+
+    vessel_1_dictionary = define_circular_tubular_structure_settings(
+        priority=3,
+        molecular_composition=TISSUE_LIBRARY.blood(oxygenation=1),
+        tube_start_mm=[x_dim/2 - 7, 0, 7],
+        tube_end_mm=[x_dim/2 - 7, y_dim, 7],
+        radius_mm=3,
+        consider_partial_volume=True,
+        adhere_to_deformation=True
+    )
+
+    vessel_2_dictionary = define_elliptical_tubular_structure_settings(
+        priority=3,
+        molecular_composition=TISSUE_LIBRARY.blood(oxygenation=0.8),
+        tube_start_mm=[x_dim/2 + 10, 0, 4],
+        tube_end_mm=[x_dim/2 + 10, y_dim, 4],
+        radius_mm=3,
+        eccentricity=0.9,
+        consider_partial_volume=True,
+        adhere_to_deformation=True
+    )
+
+    tissue_dict = Settings()
+    tissue_dict[Tags.BACKGROUND] = background_dictionary
+    tissue_dict["muscle"] = muscle_dictionary
+    tissue_dict["vessel_1"] = vessel_1_dictionary
+    tissue_dict["vessel_2"] = vessel_2_dictionary
     return tissue_dict
