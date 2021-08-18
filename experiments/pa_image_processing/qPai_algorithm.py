@@ -22,6 +22,8 @@ from simpa.utils.path_manager import PathManager
 from simpa.core.device_digital_twins import PhotoacousticDevice, PencilBeamIlluminationGeometry, GaussianBeamIlluminationGeometry, DiskIlluminationGeometry
 from utils.create_example_tissue import create_qPAI_phantom
 from utils.save_directory import get_save_path
+from visualization.colorbar import col_bar
+from matplotlib_scalebar.scalebar import ScaleBar
 
 
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
@@ -36,8 +38,8 @@ SPACING = 0.08
 RANDOM_SEED = 500
 VOLUME_NAME = "qPAI_Algorithm" + str(RANDOM_SEED)
 
-# If VISUALIZE is set to True, the reconstruction result will be plotted
-VISUALIZE = True
+# If SHOW_IMAGE is set to True, the reconstruction result will be shown instead of saved
+SHOW_IMAGE = False
 
 # set settings for volume creation, optical simulation and iterative qPAI method
 np.random.seed(RANDOM_SEED)
@@ -110,71 +112,75 @@ device = CustomDevice()
 simulate(pipeline, settings, device)
 
 # visualize reconstruction results
-if VISUALIZE:
-    # get simulation output
-    data_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
-    file = load_hdf5(data_path)
-    settings = Settings(file["settings"])
-    wavelength = settings[Tags.WAVELENGTHS][0]
+# get simulation output
+data_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
+file = load_hdf5(data_path)
+settings = Settings(file["settings"])
+wavelength = settings[Tags.WAVELENGTHS][0]
 
-    # get reconstruction result
-    absorption_reconstruction = load_data_field(data_path, Tags.ITERATIVE_qPAI_RESULT, wavelength)
+# get reconstruction result
+absorption_reconstruction = load_data_field(data_path, Tags.ITERATIVE_qPAI_RESULT, wavelength)
 
-    # get ground truth absorption coefficients
-    absorption_gt = load_data_field(data_path, Tags.PROPERTY_ABSORPTION_PER_CM, wavelength)
-    fluence = load_data_field(data_path, Tags.OPTICAL_MODEL_FLUENCE, wavelength)
+# get ground truth absorption coefficients
+absorption_gt = load_data_field(data_path, Tags.PROPERTY_ABSORPTION_PER_CM, wavelength)
+fluence = load_data_field(data_path, Tags.OPTICAL_MODEL_FLUENCE, wavelength)
 
-    # rescale ground truth to same dimension as reconstruction (necessary due to resampling in iterative algorithm)
-    scale = np.shape(absorption_reconstruction)[0] / np.shape(absorption_gt)[0]  # same as Tags.DOWNSCALE_FACTOR
-    absorption_gt = zoom(absorption_gt, scale, order=0, mode="nearest")
-    # fluence = zoom(fluence, scale, order=0, mode="nearest")
+# rescale ground truth to same dimension as reconstruction (necessary due to resampling in iterative algorithm)
+scale = np.shape(absorption_reconstruction)[0] / np.shape(absorption_gt)[0]  # same as Tags.DOWNSCALE_FACTOR
+absorption_gt = zoom(absorption_gt, scale, order=0, mode="nearest")
+# fluence = zoom(fluence, scale, order=0, mode="nearest")
 
 
-    # compute reconstruction error
-    difference = absorption_gt - absorption_reconstruction
+# compute reconstruction error
+difference = absorption_gt - absorption_reconstruction
 
-    median_error = np.median(difference)
-    q3, q1 = np.percentile(difference, [75, 25])
-    iqr = q3 - q1
+median_error = np.median(difference)
+q3, q1 = np.percentile(difference, [75, 25])
+iqr = q3 - q1
 
-    # visualize results
-    x_pos = int(np.shape(absorption_gt)[0] / 2)
-    y_pos = int(np.shape(absorption_gt)[1] / 2)
+# visualize results
+x_pos = int(np.shape(absorption_gt)[0] / 2)
+y_pos = int(np.shape(absorption_gt)[1] / 2)
 
-    cmin = np.min(absorption_gt)
-    cmax = np.max(absorption_gt)
+cmin = np.min(absorption_gt)
+cmax = np.max(absorption_gt)
 
-    results_x_z = [absorption_gt[:, y_pos, :], absorption_reconstruction[:, y_pos, :], difference[:, y_pos, :]]
-    results_y_z = [absorption_gt[x_pos, :, :], absorption_reconstruction[x_pos, :, :], difference[x_pos, :, :]]
+results_x_z = [absorption_gt[:, y_pos, :], absorption_reconstruction[:, y_pos, :], difference[:, y_pos, :]]
+results_y_z = [absorption_gt[x_pos, :, :], absorption_reconstruction[x_pos, :, :], difference[x_pos, :, :]]
 
-    label = ["Absorption coefficients: ${\mu_a}^{gt}$", "Reconstruction: ${\mu_a}^{reconstr.}$",
-             "Difference: ${\mu_a}^{gt} - {\mu_a}^{reconstr.}$"]
+label = ["Absorption coefficients: ${\mu_a}^{gt}$", "Reconstruction: ${\mu_a}^{reconstr.}$",
+         "Difference: ${\mu_a}^{gt} - {\mu_a}^{reconstr.}$"]
 
-    plt.figure(figsize=(20, 8))
-    # plt.subplots_adjust(hspace=0.5)
-    # plt.suptitle("Iterative qPAI Reconstruction \n median error = " + str(np.round(median_error, 4)) +
-    #              "\n IQR = " + str(np.round(iqr, 4)), fontsize=10)
+plt.figure(figsize=(20, 8))
+# plt.subplots_adjust(hspace=0.5)
+# plt.suptitle("Iterative qPAI Reconstruction \n median error = " + str(np.round(median_error, 4)) +
+#              "\n IQR = " + str(np.round(iqr, 4)), fontsize=10)
 
-    cmap = "jet"
+cmap = "jet"
 
-    for i, quantity in enumerate(results_x_z):
-        plt.subplot(1, len(results_x_z) + 1, i + 1)
-        if i == 0:
-            plt.ylabel("x-z", fontsize=10)
-        plt.title(label[i], fontsize=10)
-        if i == 2:
-            cmap = "Reds"
-        plt.imshow(np.rot90(quantity, -1), cmap=cmap)
-        plt.xticks(fontsize=6)
-        plt.yticks(fontsize=6)
-        plt.colorbar(fraction=0.05)
-        if i in [0, 1]:
-            plt.clim(cmin, cmax)
-        else:
-            plt.clim(np.min(difference), np.max(difference))
-    plt.subplot(1, len(results_x_z) + 1, i+2)
-    plt.imshow(np.rot90(fluence[:, y_pos, :], -1), cmap="jet")
-    plt.title("Fluence")
-    plt.colorbar(fraction=0.05)
+for i, quantity in enumerate(results_x_z):
+    plt.subplot(1, len(results_x_z) + 1, i + 1)
+    # if i == 0:
+    #     plt.ylabel("x-z", fontsize=10)
+    plt.title(label[i], fontsize=10)
+    if i == 2:
+        cmap = "Reds"
+    img_plot = plt.imshow(np.rot90(quantity, -1), cmap=cmap)
+    scale_bar = ScaleBar(settings[Tags.SPACING_MM]/scale, units="mm")
+    plt.gca().add_artist(scale_bar)
+    col_bar(img_plot)
+    if i in [0, 1]:
+        plt.clim(cmin, cmax)
+    else:
+        plt.clim(np.min(difference), np.max(difference))
+plt.subplot(1, len(results_x_z) + 1, i+2)
+img_plot = plt.imshow(np.rot90(fluence[:, y_pos, :], -1), cmap="jet")
+plt.title("Fluence")
+scale_bar = ScaleBar(settings[Tags.SPACING_MM]/scale, units="mm")
+plt.gca().add_artist(scale_bar)
+col_bar(img_plot)
+if SHOW_IMAGE:
     plt.show()
-    plt.close()
+else:
+    plt.savefig(os.path.join(SAVE_PATH, "qPAI_Algorithm_result.svg"))
+plt.close()
