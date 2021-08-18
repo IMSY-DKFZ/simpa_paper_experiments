@@ -1,7 +1,7 @@
 #!/bin/sh
 
 current_dir=$(pwd)
-tmp_dir="$current_dir/tmp_memory_footprint"
+tmp_dir="$current_dir/../../output_data/pa_image_simulation/Memory_Footprint/ram_usage_logs"
 mkdir -p $tmp_dir
 
 min_spacing=0.1

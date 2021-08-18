@@ -1,2 +1,3 @@
 git+git://github.com/CAMI-DKFZ/simpa@master#egg=simpa
 git+git://github.com/pythonprofilers/memory_profiler#egg=memory_profiler
+matplotlib_scalebar

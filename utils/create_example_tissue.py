@@ -64,16 +64,18 @@ def create_square_phantom(settings):
         priority=8,
         molecular_composition=TISSUE_LIBRARY.blood(),
         start_mm=[30, 0, 50],
-        extent_mm=[50, 20, 8],
+        extent_mm=[5, 20, 8],
         consider_partial_volume=False,
         adhere_to_deformation=False
     )
 
-    inclusion_2_dictionary = define_parallelepiped_structure_settings(start_mm=[50, 0, 30],
-                                                                      edge_a_mm=[-8, 0, 5],
-                                                                      edge_b_mm=[0, 20, 0],
-                                                                      edge_c_mm=[2, 0, 6],
-                                                                      molecular_composition=TISSUE_LIBRARY.blood())
+    inclusion_2_dictionary = define_parallelepiped_structure_settings(
+        start_mm=[50, 0, 30],
+        edge_a_mm=[-8, 0, 5],
+        edge_b_mm=[0, 20, 0],
+        edge_c_mm=[2, 0, 6],
+        molecular_composition=TISSUE_LIBRARY.blood()
+    )
 
     tissue_dict = Settings()
     tissue_dict[Tags.BACKGROUND] = background_dictionary

@@ -20,21 +20,23 @@ SHOW_IMAGE = False
 output_dir = config.output_dir
 # if output_dir is None:
 #     raise AttributeError("Please specify a directory where the memory footprint files are saved!")
-Test = True
+SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
+Test = False
 if Test:
-    output_dir = "/home/kris/Work/Repositories/simpa_paper_experiments/experiments/pa_image_simulation/tmp_memory_footprint"
+    output_dir = os.path.join(SAVE_PATH, "ram_usage_logs")
     config.spacing_list = "0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41"
 
-
-color_list = ['#00429d', '#a45bc8', '#d9a1c5', '#baff8e', '#99b072', '#a0685a', '#93003a']
-SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
-
 spacing_list = config.spacing_list.split(" ")
-spacing_list = [float(i) for i in spacing_list]
+spacing_list = [float(i) for i in spacing_list if i != ""]
 
 output_per_spacing, log_per_spacing = dict(), dict()
 max_ram_per_module, time_per_module = dict(), dict()
-modules = ["vol_creation_start", "opt_sim_start", "ac_sim_start", "rec_start", "crop_start"]
+module_names = {"vol_creation_start": "Volume creation",
+                "opt_sim_start": "Optical simulation",
+                "ac_sim_start": "Acoustic simulation",
+                "rec_start": "Image reconstructoin",
+                "crop_start": "Field of view cropping"}
+modules = module_names.keys()
 for module in modules:
     max_ram_per_module[module] = dict()
     time_per_module[module] = dict()
@@ -75,7 +77,11 @@ for sp, spacing in enumerate(spacing_list):
             time_per_module[next_key][spacing] = time_in_gate[-1] - time_in_gate[0]
 
         if spacing == config.plot_spacing:
-            plt.plot(time_in_gate, ram_in_gate, label=next_key)
+            if next_key in modules:
+                label = module_names[next_key]
+            else:
+                label = next_key
+            plt.plot(time_in_gate, ram_in_gate, label=label)
             plt.fill_between(time_in_gate, ram_in_gate,
                              alpha=0.5,
                              linewidth=2)
@@ -109,7 +115,7 @@ for module in modules:
     lists = sorted(max_ram_per_module[module].items())
     x, y = zip(*lists)
 
-    plt.plot(x, y, label=module)
+    plt.plot(x, y, label=module_names[module])
 ax = plt.gca()
 ax.invert_xaxis()
 plt.legend()
@@ -127,7 +133,7 @@ for module in modules:
     lists = sorted(time_per_module[module].items())
     x, y = zip(*lists)
 
-    plt.plot(x, y, label=module)
+    plt.plot(x, y, label=module_names[module])
 ax = plt.gca()
 ax.invert_xaxis()
 plt.legend()
