@@ -26,7 +26,15 @@ VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 90
 RANDOM_SEED = 500
 spacing_list = [0.35, 0.25, 0.15]
-# spacing_list = [0.3]
+
+hyperparam_names = {"Default": "Default",
+                    Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: "Detector frequency response",
+                    Tags.ACOUSTIC_SIMULATION_3D: "3D acoustic simulation",
+                    Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: "Envelope Detection",
+                    Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING: "Bandpass filter",
+                    Tags.RECONSTRUCTION_MODE_DIFFERENTIAL: "Differential reconstruction"
+                    }
+
 hyperparam_list = ["Default",
                    Tags.MODEL_SENSOR_FREQUENCY_RESPONSE,
                    Tags.ACOUSTIC_SIMULATION_3D,
@@ -139,7 +147,12 @@ for i, gridax in enumerate(img_grid):
     img = np.rot90(img_arr[i], -1)
     im = gridax.imshow(img)
     if i < len(hyperparam_list):
-        gridax.set_title(hyperparam_list[i][0] if isinstance(hyperparam_list[i], tuple) else hyperparam_list[i])
+        if i < 2:
+            label = hyperparam_list[i][0] if isinstance(hyperparam_list[i], tuple) else hyperparam_list[i]
+        else:
+            # tag_label = hyperparam_list[i][0] if isinstance(hyperparam_list[i], tuple) else hyperparam_list[i]
+            label = hyperparam_names[hyperparam_list[i]]
+        gridax.set_title(label)
     if i % len(hyperparam_list) == 0:
         gridax.set_ylabel(f"Spacing {spacing_list[int(i / len(hyperparam_list))]}")
 
