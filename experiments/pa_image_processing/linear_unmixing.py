@@ -17,6 +17,7 @@ from utils.save_directory import get_save_path
 from utils.basic_settings import create_basic_acoustic_settings, create_basic_reconstruction_settings
 from visualization.colorbar import col_bar
 from utils.create_example_tissue import create_linear_unmixing_phantom
+from matplotlib_scalebar.scalebar import ScaleBar
 
 # FIXME temporary workaround for newest Intel architectures
 import os
@@ -168,20 +169,28 @@ plt.figure(figsize=(18, 3))
 plt.subplot(1, 4, 1)
 plt.title("Reconstructed PA image")
 recon = plt.imshow(np.rot90(reconstructed_data/np.max(reconstructed_data), -1))
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm")
+plt.gca().add_artist(scale_bar)
 col_bar(recon)
 plt.clim(0, 1)
 plt.subplot(1, 4, 2)
 plt.title("Ground truth blood oxygen saturation")
 gt_im = plt.imshow(np.rot90(gt_oxy, -1))
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm")
+plt.gca().add_artist(scale_bar)
 col_bar(gt_im)
 plt.subplot(1, 4, 3)
 plt.title("Estimated blood oxygen saturation")
 plt.imshow(np.rot90(sO2, -1))
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm")
+plt.gca().add_artist(scale_bar)
 col_bar(gt_im)
 plt.clim(np.min(gt_oxy), np.max(gt_oxy))
 plt.subplot(1, 4, 4)
 plt.title("Error")
 recon = plt.imshow(np.rot90(sO2 - gt_oxy, -1), cmap="Reds")
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm")
+plt.gca().add_artist(scale_bar)
 col_bar(recon)
 SHOW_IMAGE = False
 if SHOW_IMAGE:
