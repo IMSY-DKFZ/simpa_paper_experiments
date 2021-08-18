@@ -18,6 +18,8 @@ from simpa.visualisation.matplotlib_data_visualisation import visualise_data
 from simpa.io_handling import load_data_field
 from skimage.transform import rescale
 from utils.save_directory import get_save_path
+from utils.normalizations import normalize_min_max
+import matplotlib.colors as colors
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
@@ -82,7 +84,10 @@ for spacing in spacing_list:
 
         pa_device = MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM / 2,
                                                                 VOLUME_PLANAR_DIM_IN_MM / 2,
-                                                                25]))
+                                                                25]),
+                                   field_of_view_extent_mm=np.array([-(2 * np.sin(0.34 / 40 * 128) * 40) / 2,
+                                                                     (2 * np.sin(0.34 / 40 * 128) * 40) / 2,
+                                                                     0, 0, 0, 25]))
         pa_device.update_settings_for_use_of_model_based_volume_creator(settings)
 
         if hyperparam in [Tags.MODEL_SENSOR_FREQUENCY_RESPONSE,
@@ -104,31 +109,34 @@ for spacing in spacing_list:
 
         import time
         timer = time.time()
-        simulate(SIMUATION_PIPELINE, settings, pa_device)
+        # simulate(SIMUATION_PIPELINE, settings, pa_device)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")
 
         if i == 0:
+            mua = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.PROPERTY_ABSORPTION_PER_CM,
+                                  WAVELENGTHS[0])
+            mua = rescale(mua, spacing / min(spacing_list), order=2, anti_aliasing=True)
+            img_arr.append(mua)
+
             p0 = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.OPTICAL_MODEL_INITIAL_PRESSURE, WAVELENGTHS[0])
             p0 = rescale(p0, spacing/min(spacing_list), order=2, anti_aliasing=True)
-            norm_p0 = p0 / np.max(p0)
+            norm_p0 = normalize_min_max(p0)
             img_arr.append(norm_p0)
 
         recon = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.RECONSTRUCTED_DATA, WAVELENGTHS[0])
-        recon[recon < 0] = 0
-        norm_recon = recon / np.max(recon)
+        norm_recon = normalize_min_max(recon)
         img_arr.append(norm_recon)
 
 from mpl_toolkits.axes_grid1 import ImageGrid
-fig = plt.figure(figsize=(10, 5))
+fig = plt.figure(figsize=(40, 10))
 hyperparam_list.insert(0, "Initial Pressure")
+hyperparam_list.insert(0, "Absorption")
 img_grid = ImageGrid(fig, rect=111, nrows_ncols=(len(spacing_list), len(hyperparam_list)), axes_pad=0,
                      cbar_mode="single", cbar_location="right")
 for i, gridax in enumerate(img_grid):
     img = np.rot90(img_arr[i], -1)
-    # img_shape = img.shape
-    # img = img[:int(img_shape[0]/2), :]
     im = gridax.imshow(img)
     if i < len(hyperparam_list):
         gridax.set_title(hyperparam_list[i][0] if isinstance(hyperparam_list[i], tuple) else hyperparam_list[i])
@@ -136,6 +144,8 @@ for i, gridax in enumerate(img_grid):
         gridax.set_ylabel(f"Spacing {spacing_list[int(i / len(hyperparam_list))]}")
 
 img_grid.cbar_axes[0].colorbar(im)
-# plt.savefig(SAVE_PATH + "/hyperparam_grid.svg")
-plt.show()
-
+SHOW_IMAGE = False
+if SHOW_IMAGE:
+    plt.show()
+else:
+    plt.savefig(SAVE_PATH + "/hyperparam_grid.svg")

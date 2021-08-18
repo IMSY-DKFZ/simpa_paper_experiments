@@ -4,7 +4,7 @@ current_dir=$(pwd)
 tmp_dir="$current_dir/tmp_memory_footprint"
 mkdir -p $tmp_dir
 
-min_spacing=0.39
+min_spacing=0.1
 max_spacing=0.4
 step_spacing=0.01
 spacing_list=$(python3 -c "import numpy as np; print(np.arange($min_spacing, $max_spacing + $step_spacing, $step_spacing))")

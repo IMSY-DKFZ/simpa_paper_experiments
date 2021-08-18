@@ -7,12 +7,15 @@ from utils.read_memory_profile import read_memory_prof_file
 import matplotlib.pyplot as plt
 from datetime import datetime
 from utils.save_directory import get_save_path
+plt.style.use("bmh")
 
 parser = ArgumentParser()
 parser.add_argument("--spacing_list", default="0.2", type=str)
 parser.add_argument("--plot_spacing", default=0.2, type=float)
 parser.add_argument("--output_dir", type=str)
 config = parser.parse_args()
+
+SHOW_IMAGE = False
 
 output_dir = config.output_dir
 # if output_dir is None:
@@ -23,7 +26,7 @@ if Test:
     config.spacing_list = "0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41"
 
 
-color_list = [""]
+color_list = ['#00429d', '#a45bc8', '#d9a1c5', '#baff8e', '#99b072', '#a0685a', '#93003a']
 SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
 
 spacing_list = config.spacing_list.split(" ")
@@ -35,7 +38,7 @@ modules = ["vol_creation_start", "opt_sim_start", "ac_sim_start", "rec_start", "
 for module in modules:
     max_ram_per_module[module] = dict()
     time_per_module[module] = dict()
-
+plt.figure(figsize=(15, 7))
 for sp, spacing in enumerate(spacing_list):
     log_file_list = sorted(glob.glob(os.path.join(SAVE_PATH, "simpa_{}.log".format(spacing))))
     log_per_spacing[spacing] = dict()
@@ -59,7 +62,8 @@ for sp, spacing in enumerate(spacing_list):
 
     previous_stop = 0
     next_key = "Initializing"
-    for key, value in log_per_spacing[spacing][run].items():
+
+    for i, (key, value) in enumerate(log_per_spacing[spacing][run].items()):
         tt = output_per_spacing[spacing][run]["times"]
         stop = value
         previous_stop = previous_stop
@@ -72,7 +76,10 @@ for sp, spacing in enumerate(spacing_list):
 
         if spacing == config.plot_spacing:
             plt.plot(time_in_gate, ram_in_gate, label=next_key)
-            plt.axvline(x=value, c="black", ls=":")
+            plt.fill_between(time_in_gate, ram_in_gate,
+                             alpha=0.5,
+                             linewidth=2)
+            plt.axvline(x=value, c="black", ls=":", alpha=0.5)
         previous_stop = value
         next_key = key
 
@@ -83,14 +90,21 @@ for sp, spacing in enumerate(spacing_list):
         points_in_gate = (previous_stop <= tt)
         plt.plot(tt[points_in_gate],
                  output_per_spacing[spacing][run]["memory"][points_in_gate], label="Terminating")
+        plt.fill_between(tt[points_in_gate],
+                         output_per_spacing[spacing][run]["memory"][points_in_gate],
+                         alpha=0.5,
+                         linewidth=2)
 
-        plt.legend()
+        plt.legend(loc="best")
         plt.xlabel("Time [s]")
         plt.ylabel("RAM Usage [MB]")
-        plt.show()
+        if SHOW_IMAGE:
+            plt.show()
+        else:
+            plt.savefig(os.path.join(SAVE_PATH, "Example_RAM_curve.svg"))
         plt.close()
         # exit()
-
+plt.figure(figsize=(15, 7))
 for module in modules:
     lists = sorted(max_ram_per_module[module].items())
     x, y = zip(*lists)
@@ -102,8 +116,13 @@ plt.legend()
 plt.xlabel("Spacing [mm]")
 plt.ylabel("RAM Usage [MB]")
 plt.semilogy()
-plt.show()
+if SHOW_IMAGE:
+    plt.show()
+else:
+    plt.savefig(os.path.join(SAVE_PATH, "RAM_scaling.svg"))
+plt.close()
 
+plt.figure(figsize=(15, 7))
 for module in modules:
     lists = sorted(time_per_module[module].items())
     x, y = zip(*lists)
@@ -115,4 +134,8 @@ plt.legend()
 plt.xlabel("Spacing [mm]")
 plt.ylabel("Runtime [s]")
 plt.semilogy()
-plt.show()
+if SHOW_IMAGE:
+    plt.show()
+else:
+    plt.savefig(os.path.join(SAVE_PATH, "Time_scaling.svg"))
+plt.close()
