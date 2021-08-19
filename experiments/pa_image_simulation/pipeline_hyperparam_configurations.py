@@ -117,7 +117,7 @@ for spacing in spacing_list:
 
         import time
         timer = time.time()
-        # simulate(SIMUATION_PIPELINE, settings, pa_device)
+        simulate(SIMUATION_PIPELINE, settings, pa_device)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")
