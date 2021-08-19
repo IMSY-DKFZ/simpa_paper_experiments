@@ -1,3 +1,5 @@
+import os
+
 from simpa.utils.libraries.structure_library import SphericalStructure, define_spherical_structure_settings
 from simpa.utils.libraries.structure_library import ParallelepipedStructure, define_parallelepiped_structure_settings
 from simpa.utils.libraries.structure_library import RectangularCuboidStructure, define_rectangular_cuboid_structure_settings
@@ -7,6 +9,9 @@ from simpa.utils.deformation_manager import create_deformation_settings
 from simpa.utils import Settings, Tags
 import matplotlib.pyplot as plt
 import numpy as np
+from utils.save_directory import get_save_path
+
+SAVE_PATH = get_save_path("Tissue_Generation", "Geometrical_Shapes")
 
 np.random.seed(28374628)
 
@@ -60,5 +65,5 @@ ax.set_zlabel("Depth [mm]")
 ax.set_xlabel("x width [mm]")
 ax.set_ylabel("y width [mm]")
 ax.view_init(elev=10., azim=-45)
-plt.savefig("geometrical_shapes.png", dpi=300)
+plt.savefig(os.path.join(SAVE_PATH, "geometrical_shapes.png"), dpi=300)
 plt.show()

@@ -11,6 +11,7 @@ import inspect
 import matplotlib.pyplot as plt
 from simpa.utils.libraries.structure_library import define_horizontal_layer_structure_settings, \
     define_vessel_structure_settings, define_circular_tubular_structure_settings, define_background_structure_settings
+from utils.save_directory import get_save_path
 
 
 import os
@@ -22,8 +23,7 @@ SPACING = 1.0
 RANDOM_SEED = 24618925
 
 path_manager = PathManager()
-
-base_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+SAVE_PATH = get_save_path("Tissue_Generation", "Forearm")
 
 
 def create_example_tissue():
@@ -69,12 +69,14 @@ def create_example_tissue():
 
 
 np.random.seed(RANDOM_SEED)
+VOLUME_NAME = "ForearmScan" + str(RANDOM_SEED)
+file_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
 
 settings = {
     # These parameters set he general propeties of the simulated volume
     Tags.RANDOM_SEED: RANDOM_SEED,
-    Tags.VOLUME_NAME: "ForearmScan" + str(RANDOM_SEED),
-    Tags.SIMULATION_PATH: "./",
+    Tags.VOLUME_NAME: VOLUME_NAME,
+    Tags.SIMULATION_PATH: SAVE_PATH,
     Tags.SPACING_MM: SPACING,
     Tags.WAVELENGTHS: [700],
     Tags.DIM_VOLUME_Z_MM: VOLUME_WIDTH_HEIGHT_DIM_IN_MM,
@@ -99,7 +101,7 @@ SIMUATION_PIPELINE = [
 simulate(SIMUATION_PIPELINE, settings, device)
 wavelength = settings[Tags.WAVELENGTHS][0]
 
-segmentation_mask = load_data_field(file_path=settings[Tags.VOLUME_NAME] + ".hdf5",
+segmentation_mask = load_data_field(file_path=file_path,
                                     wavelength=wavelength,
                                     data_field=Tags.PROPERTY_SEGMENTATION)
 
@@ -116,5 +118,5 @@ ax.set_zlabel("Depth [mm]")
 ax.set_xlabel("x width [mm]")
 ax.set_ylabel("y width [mm]")
 ax.view_init(elev=10., azim=-45)
-plt.savefig("forearm.png", dpi=300)
+plt.savefig(os.path.join(SAVE_PATH, "forearm.png"), dpi=300)
 plt.show()

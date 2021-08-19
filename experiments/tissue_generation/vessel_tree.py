@@ -5,7 +5,10 @@ from simpa.utils.deformation_manager import create_deformation_settings
 from simpa.utils import Settings, Tags
 import matplotlib.pyplot as plt
 import numpy as np
+from utils.save_directory import get_save_path
+import os
 
+SAVE_PATH = get_save_path("Tissue_Generation", "Vessel_Tree")
 np.random.seed(8257387)
 
 global_settings = Settings()
@@ -51,5 +54,5 @@ ax.set_zlabel("Depth [mm]")
 ax.set_xlabel("x width [mm]")
 ax.set_ylabel("y width [mm]")
 ax.view_init(elev=10., azim=-45)
-plt.savefig("vessel_tree.png", dpi=300)
+plt.savefig(os.path.join(SAVE_PATH, "vessel_tree.png"), dpi=300)
 plt.show()
