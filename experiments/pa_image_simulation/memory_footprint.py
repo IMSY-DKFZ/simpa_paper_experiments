@@ -19,6 +19,8 @@ from utils.save_directory import get_save_path
 
 parser = ArgumentParser()
 parser.add_argument("--spacing", type=float, default=0.4, help="Spacing for the simulation")
+parser.add_argument("--run", type=int, default=0,
+                    help="Number that specifies how many times this spacing has been repeated")
 config = parser.parse_args()
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
@@ -32,13 +34,14 @@ path_manager = PathManager()
 WAVELENGTHS = [800]
 SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
 spacing = config.spacing
-logger = Logger(os.path.join(SAVE_PATH, "simpa_{}.log".format(spacing)), force_new_instance=True)
+run = config.run
+logger = Logger(os.path.join(SAVE_PATH, "simpa_spacing_{}_run_{}.log".format(spacing, run)), force_new_instance=True)
 # Seed the numpy random configuration prior to creating the global_settings file in
 # order to ensure that the same volume
 # is generated with the same random seed every time.
 np.random.seed(RANDOM_SEED)
 
-VOLUME_NAME = "Spacing_{}_Seed_{}".format(spacing, RANDOM_SEED)
+VOLUME_NAME = "Spacing_{}_Run_{}_Seed_{}".format(spacing, run, RANDOM_SEED)
 
 general_settings = {
             # These parameters set the general properties of the simulated volume

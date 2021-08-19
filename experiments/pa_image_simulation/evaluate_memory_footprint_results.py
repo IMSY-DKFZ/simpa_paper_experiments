@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 import glob
 import os
+import numpy as np
 from simpa.utils import PathManager
 from utils.read_log_file import get_times_from_log_file
 from utils.read_memory_profile import read_memory_prof_file
@@ -24,7 +25,8 @@ SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
 Test = False
 if Test:
     output_dir = os.path.join(SAVE_PATH, "ram_usage_logs")
-    config.spacing_list = "0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41"
+    config.spacing_list = "0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4"
+    config.spacing_list = "0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4"
 
 spacing_list = config.spacing_list.split(" ")
 spacing_list = [float(i) for i in spacing_list if i != ""]
@@ -40,12 +42,16 @@ modules = module_names.keys()
 for module in modules:
     max_ram_per_module[module] = dict()
     time_per_module[module] = dict()
+    for spacing in spacing_list:
+        max_ram_per_module[module][spacing] = dict()
+        time_per_module[module][spacing] = dict()
 plt.figure(figsize=(15, 7))
 for sp, spacing in enumerate(spacing_list):
-    log_file_list = sorted(glob.glob(os.path.join(SAVE_PATH, "simpa_{}.log".format(spacing))))
+    log_file_list = sorted(glob.glob(os.path.join(SAVE_PATH, "simpa_spacing_{}_run_*.log".format(spacing))))
     log_per_spacing[spacing] = dict()
     output_file_list = sorted(glob.glob(os.path.join(output_dir, "mem_spacing_{}-run*".format(spacing))))
     output_per_spacing[spacing] = dict()
+    number_of_runs = len(output_file_list)
 
     for run, (log_file, output_file) in enumerate(zip(log_file_list, output_file_list)):
         log_times = get_times_from_log_file(log_file)
@@ -62,65 +68,76 @@ for sp, spacing in enumerate(spacing_list):
         output_per_spacing[spacing][run] = {"times": mem_times, "memory": memory}
         log_per_spacing[spacing][run] = log_times
 
-    previous_stop = 0
-    next_key = "Initializing"
+    for run in range(number_of_runs):
+        previous_stop = 0
+        next_key = "Initializing"
+        for i, (key, value) in enumerate(log_per_spacing[spacing][run].items()):
+            tt = output_per_spacing[spacing][run]["times"]
+            stop = value
+            previous_stop = previous_stop
+            points_in_gate = (previous_stop <= tt) & (tt <= stop)
+            time_in_gate = tt[points_in_gate]
+            ram_in_gate = output_per_spacing[spacing][run]["memory"][points_in_gate]
+            if next_key != "Initializing":
+                max_ram_per_module[next_key][spacing][run] = max(ram_in_gate)
+                time_per_module[next_key][spacing][run] = time_in_gate[-1] - time_in_gate[0]
 
-    for i, (key, value) in enumerate(log_per_spacing[spacing][run].items()):
-        tt = output_per_spacing[spacing][run]["times"]
-        stop = value
-        previous_stop = previous_stop
-        points_in_gate = (previous_stop <= tt) & (tt <= stop)
-        time_in_gate = tt[points_in_gate]
-        ram_in_gate = output_per_spacing[spacing][run]["memory"][points_in_gate]
-        if next_key != "Initializing":
-            max_ram_per_module[next_key][spacing] = max(ram_in_gate)
-            time_per_module[next_key][spacing] = time_in_gate[-1] - time_in_gate[0]
+            if spacing == config.plot_spacing and run == 0:
+                if next_key in modules:
+                    label = module_names[next_key]
+                else:
+                    label = next_key
+                plt.plot(time_in_gate, np.array(ram_in_gate)/1000, label=label)
+                plt.fill_between(time_in_gate, np.array(ram_in_gate)/1000,
+                                 alpha=0.5,
+                                 linewidth=2)
+                plt.axvline(x=value, c="black", ls=":", alpha=0.5)
+            previous_stop = value
+            next_key = key
 
-        if spacing == config.plot_spacing:
-            if next_key in modules:
-                label = module_names[next_key]
-            else:
-                label = next_key
-            plt.plot(time_in_gate, ram_in_gate, label=label)
-            plt.fill_between(time_in_gate, ram_in_gate,
+        ### Now for the ending time ###
+        if spacing == config.plot_spacing and run == 0:
+            tt = output_per_spacing[spacing][run]["times"]
+            previous_stop = previous_stop
+            points_in_gate = (previous_stop <= tt)
+            plt.plot(tt[points_in_gate],
+                     np.array(output_per_spacing[spacing][run]["memory"][points_in_gate])/1000, label="Terminating")
+            plt.fill_between(tt[points_in_gate],
+                             np.array(output_per_spacing[spacing][run]["memory"][points_in_gate])/1000,
                              alpha=0.5,
                              linewidth=2)
-            plt.axvline(x=value, c="black", ls=":", alpha=0.5)
-        previous_stop = value
-        next_key = key
 
-    ### Now for the ending time ###
-    if spacing == config.plot_spacing:
-        tt = output_per_spacing[spacing][run]["times"]
-        previous_stop = previous_stop
-        points_in_gate = (previous_stop <= tt)
-        plt.plot(tt[points_in_gate],
-                 output_per_spacing[spacing][run]["memory"][points_in_gate], label="Terminating")
-        plt.fill_between(tt[points_in_gate],
-                         output_per_spacing[spacing][run]["memory"][points_in_gate],
-                         alpha=0.5,
-                         linewidth=2)
-
-        plt.legend(loc="best")
-        plt.xlabel("Time [s]")
-        plt.ylabel("RAM Usage [MB]")
-        if SHOW_IMAGE:
-            plt.show()
-        else:
-            plt.savefig(os.path.join(SAVE_PATH, "Example_RAM_curve.svg"))
-        plt.close()
-        # exit()
+            plt.legend(loc="best")
+            plt.xlabel("Time [s]")
+            plt.ylabel("RAM Usage [GB]")
+            if SHOW_IMAGE:
+                plt.show()
+            else:
+                plt.savefig(os.path.join(SAVE_PATH, "Example_RAM_curve.svg"))
+            plt.close()
+            # exit()
 plt.figure(figsize=(15, 7))
 for module in modules:
-    lists = sorted(max_ram_per_module[module].items())
-    x, y = zip(*lists)
+    std_ram_list = list()
+    for spacing in spacing_list:
+        run_list = list()
+        for run in range(number_of_runs):
+            run_list.append(max_ram_per_module[module][spacing][run])
+        mean_ram = np.mean(run_list)
+        std_ram = np.std(run_list)
+        max_ram_per_module[module][spacing] = mean_ram
+        std_ram_list.append(std_ram)
 
-    plt.plot(x, y, label=module_names[module])
+    max_lists = sorted(max_ram_per_module[module].items())
+    x, y = zip(*max_lists)
+
+    plt.plot(x, np.array(y) / 1000, label=module_names[module])
+    plt.fill_between(x, (np.array(y) - np.array(std_ram_list))/1000, (np.array(y) + np.array(std_ram_list))/1000, alpha=0.5)
 ax = plt.gca()
 ax.invert_xaxis()
 plt.legend()
 plt.xlabel("Spacing [mm]")
-plt.ylabel("RAM Usage [MB]")
+plt.ylabel("Peak RAM Usage [GB]")
 plt.semilogy()
 if SHOW_IMAGE:
     plt.show()
@@ -130,10 +147,22 @@ plt.close()
 
 plt.figure(figsize=(15, 7))
 for module in modules:
-    lists = sorted(time_per_module[module].items())
-    x, y = zip(*lists)
+    std_time_list = list()
+    for spacing in spacing_list:
+        run_list = list()
+        for run in range(number_of_runs):
+            run_list.append(time_per_module[module][spacing][run])
+        mean_time = np.mean(run_list)
+        std_time = np.std(run_list)
+        time_per_module[module][spacing] = mean_time
+        std_time_list.append(std_time)
+
+    max_lists = sorted(time_per_module[module].items())
+    x, y = zip(*max_lists)
 
     plt.plot(x, y, label=module_names[module])
+    plt.fill_between(x, np.array(y) - np.array(std_time_list), np.array(y) + np.array(std_time_list), alpha=0.5)
+
 ax = plt.gca()
 ax.invert_xaxis()
 plt.legend()
