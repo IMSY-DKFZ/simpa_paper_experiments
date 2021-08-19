@@ -13,18 +13,18 @@ spacing_list=${spacing_list:1:-1}
 repeat_per_spacing=10
 
 
-#for spacing in $spacing_list
-#do
-#  for (( i=0; i < $repeat_per_spacing; ++i ))
-#  do
-#    if [ $1 = "c" ]
-#    then
-#      :
-#    else
-#      rm "$tmp_dir/mem_spacing_$spacing-run_$i.csv"
-#    fi
-#    mprof run --output "$tmp_dir/mem_spacing_$spacing-run_$i.csv" --interval 0.01 memory_footprint.py --spacing $spacing --run $i
-#  done
-#done
+for spacing in $spacing_list
+do
+  for (( i=0; i < $repeat_per_spacing; ++i ))
+  do
+    if [ $1 = "c" ]
+    then
+      :
+    else
+      rm "$tmp_dir/mem_spacing_$spacing-run_$i.csv"
+    fi
+    mprof run --output "$tmp_dir/mem_spacing_$spacing-run_$i.csv" --interval 0.01 memory_footprint.py --spacing $spacing --run $i
+  done
+done
 
 python3 evaluate_memory_footprint_results.py --spacing_list "$spacing_list" --output_dir "$tmp_dir" --plot_spacing 0.2
