@@ -18,7 +18,7 @@ from simpa.visualisation.matplotlib_data_visualisation import visualise_data
 from simpa.io_handling import load_data_field
 from skimage.transform import rescale
 from utils.save_directory import get_save_path
-from utils.normalizations import normalize_min_max
+from utils.normalizations import standardize
 import matplotlib.colors as colors
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
@@ -26,13 +26,14 @@ VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 90
 RANDOM_SEED = 500
 spacing_list = [0.35, 0.25, 0.15]
+SHOW_IMAGE = True
 
-hyperparam_names = {"Default": "Default",
-                    Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: "Detector frequency response",
-                    Tags.ACOUSTIC_SIMULATION_3D: "3D acoustic simulation",
-                    Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: "Envelope Detection",
-                    Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING: "Bandpass filter",
-                    Tags.RECONSTRUCTION_MODE_DIFFERENTIAL: "Differential reconstruction"
+hyperparam_names = {"Default": "Default\n(2D acoustic simulation\nno frequency response\n no envelope detection\nno bandpass filtering\npressure mode)",
+                    Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: "Default\n+ detector frequency response",
+                    Tags.ACOUSTIC_SIMULATION_3D: "Default\n+ 3D acoustic simulation",
+                    Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: "Default\n+ envelope detection",
+                    Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING: "Default\n+ bandpass filter",
+                    Tags.RECONSTRUCTION_MODE_DIFFERENTIAL: "Default\n+ differential mode"
                     }
 
 hyperparam_list = ["Default",
@@ -117,47 +118,50 @@ for spacing in spacing_list:
 
         import time
         timer = time.time()
-        simulate(SIMUATION_PIPELINE, settings, pa_device)
+        # simulate(SIMUATION_PIPELINE, settings, pa_device)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")
 
         if i == 0:
-            mua = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.PROPERTY_ABSORPTION_PER_CM,
-                                  WAVELENGTHS[0])
-            mua = rescale(mua, spacing / min(spacing_list), order=2, anti_aliasing=True)
-            img_arr.append(mua)
+            # mua = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.PROPERTY_ABSORPTION_PER_CM,
+            #                       WAVELENGTHS[0])
+            # mua = rescale(mua, spacing / min(spacing_list), order=2, anti_aliasing=True)
+            # img_arr.append(mua)
 
             p0 = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.OPTICAL_MODEL_INITIAL_PRESSURE, WAVELENGTHS[0])
             p0 = rescale(p0, spacing/min(spacing_list), order=2, anti_aliasing=True)
-            norm_p0 = normalize_min_max(p0)
+            norm_p0, _, _ = standardize(p0, log=False)
             img_arr.append(norm_p0)
 
         recon = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.RECONSTRUCTED_DATA, WAVELENGTHS[0])
-        norm_recon = normalize_min_max(recon)
+        norm_recon, _, _ = standardize(recon, log=False)
         img_arr.append(norm_recon)
 
 from mpl_toolkits.axes_grid1 import ImageGrid
-fig = plt.figure(figsize=(40, 10))
-hyperparam_list.insert(0, "Initial Pressure")
-hyperparam_list.insert(0, "Absorption")
-img_grid = ImageGrid(fig, rect=111, nrows_ncols=(len(spacing_list), len(hyperparam_list)), axes_pad=0,
+fig = plt.figure(figsize=(25, 8))
+hyperparam_list.insert(0, "Initial pressure\n(simulated ground truth)")
+# hyperparam_list.insert(0, "Absorption")
+img_grid = ImageGrid(fig, rect=111, nrows_ncols=(len(spacing_list), len(hyperparam_list)), axes_pad=0.05,
                      cbar_mode="single", cbar_location="right")
 for i, gridax in enumerate(img_grid):
-    img = np.rot90(img_arr[i], -1)
-    im = gridax.imshow(img)
+    img = np.rot90(img_arr[i], -1)[:, 75:-75]
+    im = gridax.imshow(img, vmin=-3, vmax=3)
     if i < len(hyperparam_list):
-        if i < 2:
+        if i < 1:
             label = hyperparam_list[i][0] if isinstance(hyperparam_list[i], tuple) else hyperparam_list[i]
         else:
             # tag_label = hyperparam_list[i][0] if isinstance(hyperparam_list[i], tuple) else hyperparam_list[i]
             label = hyperparam_names[hyperparam_list[i]]
         gridax.set_title(label)
     if i % len(hyperparam_list) == 0:
-        gridax.set_ylabel(f"Spacing {spacing_list[int(i / len(hyperparam_list))]}")
+        gridax.text(x=-20, y=150, s=f"Spacing {spacing_list[int(i / len(hyperparam_list))]} mm", rotation=90)
+        gridax.text(x=20, y=140, s="5mm", c="w")
+        gridax.plot([15, 70], [150, 150], linewidth=5, color="white")
+    gridax.axis('off')
 
-img_grid.cbar_axes[0].colorbar(im)
-SHOW_IMAGE = False
+cbar = img_grid.cbar_axes[0].colorbar(im)
+cbar.set_label_text("Signal intensity [normalised units]")
 if SHOW_IMAGE:
     plt.show()
 else:
