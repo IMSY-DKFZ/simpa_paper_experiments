@@ -109,7 +109,7 @@ class CustomDevice(PhotoacousticDevice):
 
 device = CustomDevice()
 
-simulate(pipeline, settings, device)
+# simulate(pipeline, settings, device)
 
 # visualize reconstruction results
 # get simulation output
@@ -151,7 +151,7 @@ results_y_z = [absorption_gt[x_pos, :, :], absorption_reconstruction[x_pos, :, :
 label = ["Absorption coefficients: ${\mu_a}^{gt}$", "Reconstruction: ${\mu_a}^{reconstr.}$",
          "Difference: ${\mu_a}^{gt} - {\mu_a}^{reconstr.}$"]
 
-plt.figure(figsize=(20, 8))
+plt.figure(figsize=(12, 3))
 # plt.subplots_adjust(hspace=0.5)
 # plt.suptitle("Iterative qPAI Reconstruction \n median error = " + str(np.round(median_error, 4)) +
 #              "\n IQR = " + str(np.round(iqr, 4)), fontsize=10)
@@ -166,7 +166,7 @@ for i, quantity in enumerate(results_x_z):
     if i == 2:
         cmap = "Reds"
     img_plot = plt.imshow(np.rot90(quantity, -1), cmap=cmap)
-    scale_bar = ScaleBar(settings[Tags.SPACING_MM]/scale, units="mm")
+    scale_bar = ScaleBar(settings[Tags.SPACING_MM]/scale, units="mm", location="lower left")
     plt.gca().add_artist(scale_bar)
     col_bar(img_plot)
     if i in [0, 1]:
@@ -176,9 +176,10 @@ for i, quantity in enumerate(results_x_z):
 plt.subplot(1, len(results_x_z) + 1, i+2)
 img_plot = plt.imshow(np.rot90(fluence[:, y_pos, :], -1), cmap="jet")
 plt.title("Fluence")
-scale_bar = ScaleBar(settings[Tags.SPACING_MM]/scale, units="mm")
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower left")
 plt.gca().add_artist(scale_bar)
 col_bar(img_plot)
+plt.tight_layout()
 if SHOW_IMAGE:
     plt.show()
 else:
