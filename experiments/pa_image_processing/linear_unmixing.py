@@ -100,7 +100,7 @@ settings["linear_unmixing"] = {
     Tags.LINEAR_UNMIXING_OXYHEMOGLOBIN_WAVELENGTHS: wavelengths_to_unmix,
     Tags.LINEAR_UNMIXING_DEOXYHEMOGLOBIN_WAVELENGTHS: wavelengths_to_unmix,
     Tags.LINEAR_UNMIXING_COMPUTE_SO2: True,
-    Tags.SIGNAL_THRESHOLD: 0.05
+    Tags.SIGNAL_THRESHOLD: 0.00
 }
 
 # Get device for simulation
@@ -122,7 +122,7 @@ pipeline = [
     ImageReconstructionModuleDelayAndSumAdapter(settings),
     FieldOfViewCroppingProcessingComponent(settings),
 ]
-simulate(pipeline, settings, device)
+# simulate(pipeline, settings, device)
 
 # Run linear unmixing component with above specified settings.
 file_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
@@ -131,30 +131,30 @@ LinearUnmixingProcessingComponent(settings, "linear_unmixing").run()
 
 # Load linear unmixing result (blood oxygen saturation) and reference absorption for first wavelength.
 lu_results = load_data_field(file_path, Tags.LINEAR_UNMIXING_RESULT)
-sO2 = lu_results["sO2"]
+sO2 = lu_results["sO2"] * 100
 
 mua = load_data_field(file_path, Tags.PROPERTY_ABSORPTION_PER_CM, wavelength=WAVELENGTHS[0])
 p0 = load_data_field(file_path, Tags.OPTICAL_MODEL_INITIAL_PRESSURE, wavelength=WAVELENGTHS[0])
-gt_oxy = load_data_field(file_path, Tags.PROPERTY_OXYGENATION, wavelength=WAVELENGTHS[0])
+gt_oxy = load_data_field(file_path, Tags.PROPERTY_OXYGENATION, wavelength=WAVELENGTHS[0]) * 100
 reconstructed_data = load_data_field(file_path, Tags.RECONSTRUCTED_DATA, wavelength=WAVELENGTHS[0])
 
-PLOT_SPECTRA = False
-if PLOT_SPECTRA:
-    mua_spectrum, p0_spectrum = list(), list()
-    example_coordinate = [114, 17]
-    for wavelength in WAVELENGTHS:
-        mua_spectrum.append(load_data_field(file_path, Tags.PROPERTY_ABSORPTION_PER_CM,
-                                            wavelength=wavelength)[example_coordinate[0], example_coordinate[1]])
-        p0_spectrum.append(load_data_field(file_path, unmixing_data_field,
-                                           wavelength=wavelength)[example_coordinate[0], example_coordinate[1]])
-
-    mua_spectrum = np.array(mua_spectrum) / max(mua_spectrum)
-    p0_spectrum = np.array(p0_spectrum) / max(p0_spectrum)
-    plt.plot(WAVELENGTHS, mua_spectrum, label="Absorption")
-    plt.plot(WAVELENGTHS, p0_spectrum, label="Initial Pressure")
-    plt.legend()
-    plt.show()
-    plt.close()
+# PLOT_SPECTRA = True
+# if PLOT_SPECTRA:
+#     mua_spectrum, p0_spectrum = list(), list()
+#     example_coordinate = [114, 17]
+#     for wavelength in WAVELENGTHS:
+#         mua_spectrum.append(load_data_field(file_path, Tags.PROPERTY_ABSORPTION_PER_CM,
+#                                             wavelength=wavelength)[example_coordinate[0], example_coordinate[1]])
+#         p0_spectrum.append(load_data_field(file_path, unmixing_data_field,
+#                                            wavelength=wavelength)[example_coordinate[0], example_coordinate[1]])
+#
+#     mua_spectrum = np.array(mua_spectrum) / max(mua_spectrum)
+#     p0_spectrum = np.array(p0_spectrum) / max(p0_spectrum)
+#     plt.plot(WAVELENGTHS, mua_spectrum, label="Absorption")
+#     plt.plot(WAVELENGTHS, p0_spectrum, label="Initial Pressure")
+#     plt.legend()
+#     plt.show()
+#     plt.close()
 
 
 # Visualize linear unmixing result
@@ -165,33 +165,35 @@ if len(data_shape) == 3:
     mua = mua[:, y_dim, :]
     gt_oxy = gt_oxy[:, y_dim, :]
 
-plt.figure(figsize=(18, 3))
+plt.figure(figsize=(15, 2.5))
+plt.title("sO$_2$ estimation with linear unmixing")
 plt.subplot(1, 4, 1)
-plt.title("Reconstructed PA image")
-recon = plt.imshow(np.rot90(reconstructed_data/np.max(reconstructed_data), -1))
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm")
+plt.title("Reconstructed PA\nimage @750nm [a.u.]")
+recon = plt.imshow(np.rot90(reconstructed_data/np.max(reconstructed_data), -1)[:, 75:-95])
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center")
 plt.gca().add_artist(scale_bar)
 col_bar(recon)
 plt.clim(0, 1)
 plt.subplot(1, 4, 2)
-plt.title("Ground truth blood oxygen saturation")
-gt_im = plt.imshow(np.rot90(gt_oxy, -1))
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm")
+plt.title("Ground truth blood\noxygen saturation (gt) [%]")
+gt_im = plt.imshow(np.rot90(gt_oxy, -1)[:, 75:-95])
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center")
 plt.gca().add_artist(scale_bar)
 col_bar(gt_im)
 plt.subplot(1, 4, 3)
-plt.title("Estimated blood oxygen saturation")
-plt.imshow(np.rot90(sO2, -1))
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm")
+plt.title("Estimated blood\noxygen saturation (est) [%]")
+plt.imshow(np.rot90(sO2, -1)[:, 75:-95])
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center")
 plt.gca().add_artist(scale_bar)
 col_bar(gt_im)
 plt.clim(np.min(gt_oxy), np.max(gt_oxy))
 plt.subplot(1, 4, 4)
-plt.title("Error")
-recon = plt.imshow(np.rot90(sO2 - gt_oxy, -1), cmap="Reds")
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm")
+plt.title("Abosolute Error |est-gt| [%]")
+recon = plt.imshow(np.rot90(np.abs(sO2 - gt_oxy), -1)[:, 75:-95], cmap="Reds", vmin=0, vmax=50)
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center")
 plt.gca().add_artist(scale_bar)
 col_bar(recon)
+plt.tight_layout()
 SHOW_IMAGE = False
 if SHOW_IMAGE:
     plt.show()
