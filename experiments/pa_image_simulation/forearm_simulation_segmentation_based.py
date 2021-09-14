@@ -18,7 +18,7 @@ from simpa.core import VolumeCreationModuleSegmentationBasedAdapter, OpticalForw
     GaussianNoiseProcessingComponent, AcousticForwardModelKWaveAdapter, ImageReconstructionModuleDelayAndSumAdapter, \
     FieldOfViewCroppingProcessingComponent
 import nrrd
-import matplotlib.pyplot as plt
+from utils.create_example_tissue import create_forearm_segmentation_tissue, segmention_class_mapping
 
 # FIXME temporary workaround for newest Intel architectures
 import os
@@ -33,44 +33,11 @@ path_manager = PathManager()
 VOLUME_TRANSDUCER_DIM_IN_MM = 80
 VOLUME_PLANAR_DIM_IN_MM = 20 #y
 VOLUME_HEIGHT_IN_MM = 50 #z
-target_spacing = 0.15625
+SPACING = 0.15625
 
-seg, header = nrrd.read("/path/to/segmentation/map")
-
-input_spacing = 0.15625
-seg = np.reshape(seg[:, :, 0], (256, 1, 128))
-# plt.imshow(seg[:, 0, :])
-# plt.show()
-segmentation_volume_tiled = np.tile(seg, (1, 128, 1))
-segmentation_volume_mask = np.ones((512, 128, 320)) * 6
-
-segmentation_volume_mask[128:384, :, -128:] = segmentation_volume_tiled
-
-segmentation_volume_mask = np.round(zoom(segmentation_volume_mask, input_spacing/target_spacing,
-                                         order=0, mode='nearest')).astype(int)
-segmentation_volume_mask[segmentation_volume_mask == 0] = 5
-# plt.imshow(segmentation_volume_mask[:, 0, :])
-# plt.show()
-
-def segmention_class_mapping():
-    ret_dict = dict()
-    ret_dict[0] = TISSUE_LIBRARY.heavy_water()
-    ret_dict[1] = TISSUE_LIBRARY.blood(oxygenation=0.9)
-    ret_dict[2] = TISSUE_LIBRARY.epidermis()
-    ret_dict[3] = TISSUE_LIBRARY.soft_tissue(blood_volume_fraction=0.05)
-    ret_dict[4] = TISSUE_LIBRARY.mediprene()
-    ret_dict[5] = TISSUE_LIBRARY.ultrasound_gel()
-    ret_dict[6] = TISSUE_LIBRARY.heavy_water()
-    # ret_dict[7] = (MolecularCompositionGenerator()
-    #                .append(MOLECULE_LIBRARY.oxyhemoglobin(0.01))
-    #                .append(MOLECULE_LIBRARY.deoxyhemoglobin(0.01))
-    #                .append(MOLECULE_LIBRARY.water(0.98))
-    #                .get_molecular_composition(SegmentationClasses.COUPLING_ARTIFACT))
-    ret_dict[7] = TISSUE_LIBRARY.muscle(blood_volume_fraction=0.2)
-    ret_dict[8] = TISSUE_LIBRARY.blood(oxygenation=0.8)
-    ret_dict[9] = TISSUE_LIBRARY.heavy_water()
-    ret_dict[10] = TISSUE_LIBRARY.heavy_water()
-    return ret_dict
+segmentation_volume_mask = create_forearm_segmentation_tissue(
+    "/path/to/segmentation/mask",
+    spacing=SPACING)
 
 
 settings = Settings()
@@ -78,7 +45,7 @@ settings[Tags.SIMULATION_PATH] = path_manager.get_hdf5_file_save_path()
 settings[Tags.VOLUME_NAME] = "SegmentationTest"
 settings[Tags.RANDOM_SEED] = 1234
 settings[Tags.WAVELENGTHS] = [950]
-settings[Tags.SPACING_MM] = target_spacing
+settings[Tags.SPACING_MM] = SPACING
 settings[Tags.DIM_VOLUME_Z_MM] = VOLUME_HEIGHT_IN_MM
 settings[Tags.DIM_VOLUME_X_MM] = VOLUME_TRANSDUCER_DIM_IN_MM
 settings[Tags.DIM_VOLUME_Y_MM] = VOLUME_PLANAR_DIM_IN_MM
@@ -168,7 +135,6 @@ device = MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM
                         field_of_view_extent_mm=np.asarray([-(2 * np.sin(0.34 / 40 * 128) * 40) / 2,
                                                             (2 * np.sin(0.34 / 40 * 128) * 40) / 2,
                                                             0, 0, 0, 50]))
-# device.update_settings_for_use_of_model_based_volume_creator(settings)
 simulate(pipeline, settings, device)
 
 if Tags.WAVELENGTH in settings:

@@ -1,6 +1,9 @@
 from simpa.utils import Tags, Settings, TISSUE_LIBRARY, MolecularCompositionGenerator, Molecule
 from simpa.utils.libraries.spectra_library import AnisotropySpectrumLibrary
 from simpa.utils.libraries.structure_library import *
+import numpy as np
+import nrrd
+from scipy.ndimage import zoom
 
 
 def create_square_phantom(settings):
@@ -190,3 +193,109 @@ def create_linear_unmixing_phantom(settings):
     tissue_dict["vessel_1"] = vessel_1_dictionary
     tissue_dict["vessel_2"] = vessel_2_dictionary
     return tissue_dict
+
+
+def create_forearm_segmentation_tissue(segmentation_file_path, spacing):
+    seg, header = nrrd.read(segmentation_file_path)
+    input_spacing = 0.15625
+    seg = np.reshape(seg[:, :, 0], (256, 1, 128))
+    # plt.imshow(seg[:, 0, :])
+    # plt.show()
+    segmentation_volume_tiled = np.tile(seg, (1, 128, 1))
+    segmentation_volume_mask = np.ones((512, 128, 320)) * 6
+
+    segmentation_volume_mask[128:384, :, -128:] = segmentation_volume_tiled
+
+    segmentation_volume_mask = np.round(zoom(segmentation_volume_mask, input_spacing / spacing,
+                                             order=0, mode='nearest')).astype(int)
+    segmentation_volume_mask[segmentation_volume_mask == 0] = 5
+
+
+def segmention_class_mapping():
+    ret_dict = dict()
+    ret_dict[0] = TISSUE_LIBRARY.heavy_water()
+    ret_dict[1] = TISSUE_LIBRARY.blood(oxygenation=0.9)
+    ret_dict[2] = TISSUE_LIBRARY.epidermis()
+    ret_dict[3] = TISSUE_LIBRARY.soft_tissue(blood_volume_fraction=0.05)
+    ret_dict[4] = TISSUE_LIBRARY.mediprene()
+    ret_dict[5] = TISSUE_LIBRARY.ultrasound_gel()
+    ret_dict[6] = TISSUE_LIBRARY.heavy_water()
+    # ret_dict[7] = (MolecularCompositionGenerator()
+    #                .append(MOLECULE_LIBRARY.oxyhemoglobin(0.01))
+    #                .append(MOLECULE_LIBRARY.deoxyhemoglobin(0.01))
+    #                .append(MOLECULE_LIBRARY.water(0.98))
+    #                .get_molecular_composition(SegmentationClasses.COUPLING_ARTIFACT))
+    ret_dict[7] = TISSUE_LIBRARY.muscle(blood_volume_fraction=0.2)
+    ret_dict[8] = TISSUE_LIBRARY.blood(oxygenation=0.8)
+    ret_dict[9] = TISSUE_LIBRARY.heavy_water()
+    ret_dict[10] = TISSUE_LIBRARY.heavy_water()
+    return ret_dict
+
+
+def create_realistic_forearm_tissue(settings):
+    x_dim = settings[Tags.DIM_VOLUME_X_MM]
+    y_dim = settings[Tags.DIM_VOLUME_Y_MM]
+    z_dim = settings[Tags.DIM_VOLUME_Z_MM]
+
+    background_dictionary = Settings()
+    background_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.constant(1e-10, 1e-10, 1.0)
+    background_dictionary[Tags.STRUCTURE_TYPE] = Tags.BACKGROUND
+
+    tissue_dict = Settings()
+    tissue_dict[Tags.BACKGROUND] = background_dictionary
+    tissue_dict["muscle"] = define_horizontal_layer_structure_settings(z_start_mm=1.5, thickness_mm=100,
+                                                                       molecular_composition=
+                                                                       TISSUE_LIBRARY.soft_tissue(blood_volume_fraction=0.05),
+                                                                       priority=1,
+                                                                       consider_partial_volume=True,
+                                                                       adhere_to_deformation=True)
+    tissue_dict["epidermis"] = define_horizontal_layer_structure_settings(z_start_mm=1.5, thickness_mm=0.05,
+                                                                          molecular_composition=
+                                                                          TISSUE_LIBRARY.epidermis(0.01),
+                                                                          priority=8,
+                                                                          consider_partial_volume=True,
+                                                                          adhere_to_deformation=True)
+    tissue_dict["main_artery"] = define_circular_tubular_structure_settings(
+        tube_start_mm=[x_dim/2 - 4.2, 0, 5.5],
+        tube_end_mm=[x_dim/2 - 4.2, y_dim, 5.5],
+        molecular_composition=TISSUE_LIBRARY.blood(),
+        radius_mm=1.25, priority=3, consider_partial_volume=True,
+        adhere_to_deformation=True
+    )
+    tissue_dict["accomp_vein_1"] = define_elliptical_tubular_structure_settings(
+        tube_start_mm=[x_dim/2 - 6.5, 0, 6],
+        tube_end_mm=[x_dim/2 - 6.5, y_dim, 6],
+        molecular_composition=TISSUE_LIBRARY.blood(),
+        radius_mm=0.625, priority=3, consider_partial_volume=True,
+        adhere_to_deformation=True,
+        eccentricity=0.8,
+    )
+    tissue_dict["accomp_vein_2"] = define_elliptical_tubular_structure_settings(
+        tube_start_mm=[x_dim / 2 - 1.2, 0, 6.1],
+        tube_end_mm=[x_dim / 2 - 1.2, y_dim, 6.1],
+        molecular_composition=TISSUE_LIBRARY.blood(),
+        radius_mm=0.65, priority=3, consider_partial_volume=True,
+        adhere_to_deformation=True,
+        eccentricity=0.8,
+    )
+
+    tissue_dict["vessel_3"] = define_elliptical_tubular_structure_settings(
+        tube_start_mm=[x_dim - 6.125, 0, 3.5],
+        tube_end_mm=[x_dim - 6.125, y_dim, 3.5],
+        molecular_composition=TISSUE_LIBRARY.blood(),
+        radius_mm=0.8, priority=3, consider_partial_volume=True,
+        adhere_to_deformation=False,
+        eccentricity=0.9,
+    )
+
+    tissue_dict["vessel_4"] = define_elliptical_tubular_structure_settings(
+        tube_start_mm=[5.2, 0, 4.5],
+        tube_end_mm=[5.2, y_dim, 4.5],
+        molecular_composition=TISSUE_LIBRARY.blood(),
+        radius_mm=0.1, priority=3, consider_partial_volume=True,
+        adhere_to_deformation=False,
+        eccentricity=0.9,
+    )
+
+    return tissue_dict
+
