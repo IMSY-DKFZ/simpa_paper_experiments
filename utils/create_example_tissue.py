@@ -262,7 +262,7 @@ def create_realistic_forearm_tissue(settings):
     tissue_dict["accomp_vein_1"] = define_elliptical_tubular_structure_settings(
         tube_start_mm=[x_dim/2 - 6.8, 0, 5.6],
         tube_end_mm=[x_dim/2 - 6.8, y_dim, 5.6],
-        molecular_composition=TISSUE_LIBRARY.blood(0.5),
+        molecular_composition=TISSUE_LIBRARY.blood(0.9),
         radius_mm=0.6, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True,
         eccentricity=0.8,
@@ -270,7 +270,7 @@ def create_realistic_forearm_tissue(settings):
     tissue_dict["accomp_vein_2"] = define_elliptical_tubular_structure_settings(
         tube_start_mm=[x_dim / 2 - 1.25, 0, 5.6],
         tube_end_mm=[x_dim / 2 - 1.25, y_dim, 5.6],
-        molecular_composition=TISSUE_LIBRARY.blood(0.5),
+        molecular_composition=TISSUE_LIBRARY.blood(0.6),
         radius_mm=0.65, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True,
         eccentricity=0.9,
@@ -282,7 +282,7 @@ def create_realistic_forearm_tissue(settings):
         molecular_composition=TISSUE_LIBRARY.blood(0.99),
         radius_mm=0.65, priority=3, consider_partial_volume=True,
         adhere_to_deformation=False,
-        eccentricity=0.9,
+        eccentricity=0.93,
     )
 
     tissue_dict["vessel_4"] = define_elliptical_tubular_structure_settings(

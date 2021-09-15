@@ -22,10 +22,15 @@ import nrrd
 from simpa.io_handling import load_data_field
 from utils.create_example_tissue import create_realistic_forearm_tissue, create_forearm_segmentation_tissue, \
     segmention_class_mapping
+from matplotlib_scalebar.scalebar import ScaleBar
+from visualization.colorbar import col_bar
+from utils.normalizations import normalize_min_max
+from utils.save_directory import get_save_path
 
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 path_manager = PathManager()
+SAVE_PATH = get_save_path("pa_image_simulation", "Realistic_Forearm_Simulation")
 
 REAL_IMAGE_PATH = "/path/to/real/image"
 SEGMENTATION_MASK_PATH = "/path/to/segmentation/mask"
@@ -37,7 +42,7 @@ simulation_dictionary = {"Segmentation-based image": dict(),
                          "Model-based image": dict()}
 
 seg_settings = Settings()
-seg_settings[Tags.SIMULATION_PATH] = path_manager.get_hdf5_file_save_path()
+seg_settings[Tags.SIMULATION_PATH] = SAVE_PATH
 seg_settings[Tags.VOLUME_NAME] = "Segmentation-based image"
 seg_settings[Tags.RANDOM_SEED] = RANDOM_SEED
 seg_settings[Tags.WAVELENGTHS] = WAVELENGTHS
@@ -159,7 +164,7 @@ simulation_dictionary["Model-based image"]["device"] = MSOTAcuityEcho(
     device_position_mm=np.array([40/2, 20/2, -3]),
     field_of_view_extent_mm=np.asarray([-20, 20, 0, 0, 0, 20]))
 
-fig = plt.figure()
+fig = plt.figure(figsize=(10, 3))
 for i, (mode, dictonary) in enumerate(simulation_dictionary.items()):
     settings = dictonary["settings"]
     device = dictonary["device"]
@@ -167,6 +172,7 @@ for i, (mode, dictonary) in enumerate(simulation_dictionary.items()):
         device.update_settings_for_use_of_model_based_volume_creator(settings)
         volume_creation_adapter = VolumeCreationModelModelBasedAdapter
     else:
+        settings["noise_time_series"][Tags.NOISE_STD] = 70
         volume_creation_adapter = VolumeCreationModuleSegmentationBasedAdapter
 
     SIMUATION_PIPELINE = [
@@ -181,14 +187,29 @@ for i, (mode, dictonary) in enumerate(simulation_dictionary.items()):
 
     simulate(SIMUATION_PIPELINE, settings, device)
 
-    recon = load_data_field(path_manager.get_hdf5_file_save_path() + "/" + settings[Tags.VOLUME_NAME] + ".hdf5",
+    recon = load_data_field(SAVE_PATH + "/" + settings[Tags.VOLUME_NAME] + ".hdf5",
                             Tags.RECONSTRUCTED_DATA, wavelength=WAVELENGTHS[0])
+
+    recon = normalize_min_max(recon)
 
     plt.subplot(1, 3, i + 2)
     plt.title(mode)
-    plt.imshow(np.rot90(recon, 3))
+    img_plot = plt.imshow(np.rot90(recon, 3))
+    scale_bar = ScaleBar(SPACING, units="mm")
+    plt.gca().add_artist(scale_bar)
+    col_bar(img_plot)
 
 orig_im, header = nrrd.read(REAL_IMAGE_PATH)
+orig_im = normalize_min_max(orig_im[:, :, 0])
 plt.subplot(1, 3, 1)
-plt.imshow(np.fliplr(np.rot90(orig_im[:, :, 0], 3)))
-plt.show()
+plt.title("Real image")
+img_plot = plt.imshow(np.fliplr(np.rot90(orig_im, 3)))
+scale_bar = ScaleBar(SPACING, units="mm")
+plt.gca().add_artist(scale_bar)
+col_bar(img_plot)
+
+SHOW_IMAGE = False
+if SHOW_IMAGE:
+    plt.show()
+else:
+    plt.savefig(SAVE_PATH + "/Realistic_Forearm_Simulation.svg")
