@@ -45,7 +45,7 @@ orig_im, header = nrrd.read("/path/to/original/file")
 
 number_of_knots = 6
 
-deformation_z_elevations = np.tile([-4, -2, 0, -1.1, -1.8, -2.7][::-1], (5, 1))
+deformation_z_elevations = np.tile([-4, -2, 0, -1.4, -1.8, -2.7][::-1], (5, 1))
 deformation_z_elevations = np.moveaxis(deformation_z_elevations, 1, 0)
 xx, yy = np.meshgrid(np.linspace(0,  (2 * np.sin(0.34 / 40 * 128) * 40), number_of_knots), np.linspace(0, VOLUME_HEIGHT_IN_MM, 5), indexing='ij')
 
@@ -180,6 +180,6 @@ recon = load_data_field(path_manager.get_hdf5_file_save_path() + "/" + VOLUME_NA
 
 import matplotlib.pyplot as plt
 plt.imshow(np.rot90(recon, 3))
-plt.imshow(np.fliplr(np.rot90(orig_im[:, :, 0], 3)), cmap="Greys", alpha=0.8)
+plt.imshow(np.fliplr(np.rot90(orig_im[:, :, 0], 3)), cmap="Greys", alpha=0.5)
 plt.show()
 

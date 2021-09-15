@@ -209,6 +209,8 @@ def create_forearm_segmentation_tissue(segmentation_file_path, spacing):
     segmentation_volume_mask = np.round(zoom(segmentation_volume_mask, input_spacing / spacing,
                                              order=0, mode='nearest')).astype(int)
     segmentation_volume_mask[segmentation_volume_mask == 0] = 5
+    segmentation_volume_mask = segmentation_volume_mask[::-1, :, :]
+    return segmentation_volume_mask
 
 
 def segmention_class_mapping():
@@ -220,11 +222,6 @@ def segmention_class_mapping():
     ret_dict[4] = TISSUE_LIBRARY.mediprene()
     ret_dict[5] = TISSUE_LIBRARY.ultrasound_gel()
     ret_dict[6] = TISSUE_LIBRARY.heavy_water()
-    # ret_dict[7] = (MolecularCompositionGenerator()
-    #                .append(MOLECULE_LIBRARY.oxyhemoglobin(0.01))
-    #                .append(MOLECULE_LIBRARY.deoxyhemoglobin(0.01))
-    #                .append(MOLECULE_LIBRARY.water(0.98))
-    #                .get_molecular_composition(SegmentationClasses.COUPLING_ARTIFACT))
     ret_dict[7] = TISSUE_LIBRARY.muscle(blood_volume_fraction=0.2)
     ret_dict[8] = TISSUE_LIBRARY.blood(oxygenation=0.8)
     ret_dict[9] = TISSUE_LIBRARY.heavy_water()
@@ -256,34 +253,34 @@ def create_realistic_forearm_tissue(settings):
                                                                           consider_partial_volume=True,
                                                                           adhere_to_deformation=True)
     tissue_dict["main_artery"] = define_circular_tubular_structure_settings(
-        tube_start_mm=[x_dim/2 - 4.2, 0, 5.5],
-        tube_end_mm=[x_dim/2 - 4.2, y_dim, 5.5],
-        molecular_composition=TISSUE_LIBRARY.blood(),
+        tube_start_mm=[x_dim/2 - 4.4, 0, 5.5],
+        tube_end_mm=[x_dim/2 - 4.4, y_dim, 5.5],
+        molecular_composition=TISSUE_LIBRARY.blood(0.99),
         radius_mm=1.25, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True
     )
     tissue_dict["accomp_vein_1"] = define_elliptical_tubular_structure_settings(
-        tube_start_mm=[x_dim/2 - 6.5, 0, 6],
-        tube_end_mm=[x_dim/2 - 6.5, y_dim, 6],
-        molecular_composition=TISSUE_LIBRARY.blood(),
-        radius_mm=0.625, priority=3, consider_partial_volume=True,
+        tube_start_mm=[x_dim/2 - 6.8, 0, 5.6],
+        tube_end_mm=[x_dim/2 - 6.8, y_dim, 5.6],
+        molecular_composition=TISSUE_LIBRARY.blood(0.5),
+        radius_mm=0.6, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True,
         eccentricity=0.8,
     )
     tissue_dict["accomp_vein_2"] = define_elliptical_tubular_structure_settings(
-        tube_start_mm=[x_dim / 2 - 1.2, 0, 6.1],
-        tube_end_mm=[x_dim / 2 - 1.2, y_dim, 6.1],
-        molecular_composition=TISSUE_LIBRARY.blood(),
+        tube_start_mm=[x_dim / 2 - 1.25, 0, 5.6],
+        tube_end_mm=[x_dim / 2 - 1.25, y_dim, 5.6],
+        molecular_composition=TISSUE_LIBRARY.blood(0.5),
         radius_mm=0.65, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True,
-        eccentricity=0.8,
+        eccentricity=0.95,
     )
 
     tissue_dict["vessel_3"] = define_elliptical_tubular_structure_settings(
         tube_start_mm=[x_dim - 6.125, 0, 3.5],
         tube_end_mm=[x_dim - 6.125, y_dim, 3.5],
-        molecular_composition=TISSUE_LIBRARY.blood(),
-        radius_mm=0.8, priority=3, consider_partial_volume=True,
+        molecular_composition=TISSUE_LIBRARY.blood(0.99),
+        radius_mm=0.65, priority=3, consider_partial_volume=True,
         adhere_to_deformation=False,
         eccentricity=0.9,
     )
@@ -291,10 +288,28 @@ def create_realistic_forearm_tissue(settings):
     tissue_dict["vessel_4"] = define_elliptical_tubular_structure_settings(
         tube_start_mm=[5.2, 0, 4.5],
         tube_end_mm=[5.2, y_dim, 4.5],
-        molecular_composition=TISSUE_LIBRARY.blood(),
+        molecular_composition=TISSUE_LIBRARY.blood(0.5),
         radius_mm=0.1, priority=3, consider_partial_volume=True,
         adhere_to_deformation=False,
-        eccentricity=0.9,
+        eccentricity=0,
+    )
+
+    tissue_dict["vessel_5"] = define_elliptical_tubular_structure_settings(
+        tube_start_mm=[x_dim - 10.4, 0, 6],
+        tube_end_mm=[x_dim - 10.4, y_dim, 6],
+        molecular_composition=TISSUE_LIBRARY.blood(0.5),
+        radius_mm=0.1, priority=3, consider_partial_volume=True,
+        adhere_to_deformation=False,
+        eccentricity=0,
+    )
+
+    tissue_dict["vessel_6"] = define_elliptical_tubular_structure_settings(
+        tube_start_mm=[x_dim - 14.4, 0, 3],
+        tube_end_mm=[x_dim - 14.4, y_dim, 3],
+        molecular_composition=TISSUE_LIBRARY.soft_tissue(blood_volume_fraction=0.2),
+        radius_mm=0.1, priority=3, consider_partial_volume=True,
+        adhere_to_deformation=False,
+        eccentricity=0.99,
     )
 
     return tissue_dict

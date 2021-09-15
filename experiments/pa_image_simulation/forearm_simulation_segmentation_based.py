@@ -19,6 +19,7 @@ from simpa.core import VolumeCreationModuleSegmentationBasedAdapter, OpticalForw
     FieldOfViewCroppingProcessingComponent
 import nrrd
 from utils.create_example_tissue import create_forearm_segmentation_tissue, segmention_class_mapping
+from simpa.io_handling import load_data_field
 
 # FIXME temporary workaround for newest Intel architectures
 import os
@@ -34,6 +35,7 @@ VOLUME_TRANSDUCER_DIM_IN_MM = 80
 VOLUME_PLANAR_DIM_IN_MM = 20 #y
 VOLUME_HEIGHT_IN_MM = 50 #z
 SPACING = 0.15625
+VOLUME_NAME = "SegmentationTest"
 
 segmentation_volume_mask = create_forearm_segmentation_tissue(
     "/path/to/segmentation/mask",
@@ -42,7 +44,7 @@ segmentation_volume_mask = create_forearm_segmentation_tissue(
 
 settings = Settings()
 settings[Tags.SIMULATION_PATH] = path_manager.get_hdf5_file_save_path()
-settings[Tags.VOLUME_NAME] = "SegmentationTest"
+settings[Tags.VOLUME_NAME] = VOLUME_NAME
 settings[Tags.RANDOM_SEED] = 1234
 settings[Tags.WAVELENGTHS] = [950]
 settings[Tags.SPACING_MM] = SPACING
@@ -132,9 +134,7 @@ pipeline = [
 device = MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM/2,
                                                      VOLUME_PLANAR_DIM_IN_MM/2,
                                                      -11]),
-                        field_of_view_extent_mm=np.asarray([-(2 * np.sin(0.34 / 40 * 128) * 40) / 2,
-                                                            (2 * np.sin(0.34 / 40 * 128) * 40) / 2,
-                                                            0, 0, 0, 50]))
+                        field_of_view_extent_mm=np.asarray([-20, 20, 0, 0, 0, 20]))
 simulate(pipeline, settings, device)
 
 if Tags.WAVELENGTH in settings:
@@ -142,12 +142,9 @@ if Tags.WAVELENGTH in settings:
 else:
     WAVELENGTH = 700
 
-if VISUALIZE:
-    visualise_data(path_to_hdf5_file=path_manager.get_hdf5_file_save_path() + "/" + "SegmentationTest" + ".hdf5", wavelength=950,
-                   show_absorption=False,
-                   show_reconstructed_data=True,
-                   log_scale=False,
-                   show_time_series_data=False,
-                   show_segmentation_map=True,
-                   show_initial_pressure=False
-                   )
+recon = load_data_field(path_manager.get_hdf5_file_save_path() + "/" + VOLUME_NAME + ".hdf5",
+                        Tags.RECONSTRUCTED_DATA, wavelength=WAVELENGTH)
+
+import matplotlib.pyplot as plt
+plt.imshow(np.rot90(recon, 3))
+plt.show()
