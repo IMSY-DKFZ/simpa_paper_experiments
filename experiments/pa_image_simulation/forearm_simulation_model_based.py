@@ -31,7 +31,7 @@ VOLUME_TRANSDUCER_DIM_IN_MM = 40
 VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 20
 SPACING = 0.15625
-RANDOM_SEED = 4711
+RANDOM_SEED = 1234
 
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().

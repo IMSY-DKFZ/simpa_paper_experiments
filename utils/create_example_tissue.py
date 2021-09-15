@@ -216,14 +216,14 @@ def create_forearm_segmentation_tissue(segmentation_file_path, spacing):
 def segmention_class_mapping():
     ret_dict = dict()
     ret_dict[0] = TISSUE_LIBRARY.heavy_water()
-    ret_dict[1] = TISSUE_LIBRARY.blood(oxygenation=0.9)
-    ret_dict[2] = TISSUE_LIBRARY.epidermis()
-    ret_dict[3] = TISSUE_LIBRARY.soft_tissue(blood_volume_fraction=0.05)
+    ret_dict[1] = TISSUE_LIBRARY.blood(oxygenation=0.99)
+    ret_dict[2] = TISSUE_LIBRARY.epidermis(0.005)
+    ret_dict[3] = TISSUE_LIBRARY.soft_tissue(blood_volume_fraction=0.005)
     ret_dict[4] = TISSUE_LIBRARY.mediprene()
     ret_dict[5] = TISSUE_LIBRARY.ultrasound_gel()
     ret_dict[6] = TISSUE_LIBRARY.heavy_water()
     ret_dict[7] = TISSUE_LIBRARY.muscle(blood_volume_fraction=0.2)
-    ret_dict[8] = TISSUE_LIBRARY.blood(oxygenation=0.8)
+    ret_dict[8] = TISSUE_LIBRARY.blood(oxygenation=0)
     ret_dict[9] = TISSUE_LIBRARY.heavy_water()
     ret_dict[10] = TISSUE_LIBRARY.heavy_water()
     return ret_dict
@@ -273,7 +273,7 @@ def create_realistic_forearm_tissue(settings):
         molecular_composition=TISSUE_LIBRARY.blood(0.5),
         radius_mm=0.65, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True,
-        eccentricity=0.95,
+        eccentricity=0.9,
     )
 
     tissue_dict["vessel_3"] = define_elliptical_tubular_structure_settings(

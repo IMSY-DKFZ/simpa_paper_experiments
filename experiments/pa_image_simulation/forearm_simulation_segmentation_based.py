@@ -8,10 +8,6 @@ from simpa.core.simulation import simulate
 from simpa.utils.settings import Settings
 from simpa.utils import Tags, SegmentationClasses, MolecularCompositionGenerator
 import numpy as np
-from simpa.utils.libraries.tissue_library import TISSUE_LIBRARY
-from simpa.utils.libraries.molecule_library import MOLECULE_LIBRARY
-from simpa.visualisation.matplotlib_data_visualisation import visualise_data
-from scipy.ndimage import zoom
 from simpa.utils.path_manager import PathManager
 from simpa.core.device_digital_twins import RSOMExplorerP50, MSOTAcuityEcho
 from simpa.core import VolumeCreationModuleSegmentationBasedAdapter, OpticalForwardModelMcxAdapter, \
@@ -32,8 +28,8 @@ VISUALIZE = True
 #  point to the correct file in the PathManager().
 path_manager = PathManager()
 VOLUME_TRANSDUCER_DIM_IN_MM = 80
-VOLUME_PLANAR_DIM_IN_MM = 20 #y
-VOLUME_HEIGHT_IN_MM = 50 #z
+VOLUME_PLANAR_DIM_IN_MM = 20
+VOLUME_HEIGHT_IN_MM = 50
 SPACING = 0.15625
 VOLUME_NAME = "SegmentationTest"
 
@@ -46,7 +42,7 @@ settings = Settings()
 settings[Tags.SIMULATION_PATH] = path_manager.get_hdf5_file_save_path()
 settings[Tags.VOLUME_NAME] = VOLUME_NAME
 settings[Tags.RANDOM_SEED] = 1234
-settings[Tags.WAVELENGTHS] = [950]
+settings[Tags.WAVELENGTHS] = [700]
 settings[Tags.SPACING_MM] = SPACING
 settings[Tags.DIM_VOLUME_Z_MM] = VOLUME_HEIGHT_IN_MM
 settings[Tags.DIM_VOLUME_X_MM] = VOLUME_TRANSDUCER_DIM_IN_MM
@@ -60,7 +56,7 @@ settings.set_volume_creation_settings({
 })
 
 settings.set_optical_settings({
-    Tags.OPTICAL_MODEL_NUMBER_PHOTONS: 1e8,
+    Tags.OPTICAL_MODEL_NUMBER_PHOTONS: 1e7,
     Tags.OPTICAL_MODEL_BINARY_PATH: path_manager.get_mcx_binary_path(),
     Tags.ILLUMINATION_TYPE: Tags.ILLUMINATION_TYPE_MSOT_ACUITY_ECHO,
     Tags.LASER_PULSE_ENERGY_IN_MILLIJOULE: 50,
@@ -134,7 +130,7 @@ pipeline = [
 device = MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM/2,
                                                      VOLUME_PLANAR_DIM_IN_MM/2,
                                                      -11]),
-                        field_of_view_extent_mm=np.asarray([-20, 20, 0, 0, 0, 20]))
+                        field_of_view_extent_mm=np.asarray([-20, 20, 0, 0, -2.3, 17.7]))
 simulate(pipeline, settings, device)
 
 if Tags.WAVELENGTH in settings:
