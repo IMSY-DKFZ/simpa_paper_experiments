@@ -26,7 +26,7 @@ Test = False
 if Test:
     output_dir = os.path.join(SAVE_PATH, "ram_usage_logs")
     config.spacing_list = "0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4"
-    config.spacing_list = "0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4"
+    # config.spacing_list = "0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4"
 
 spacing_list = config.spacing_list.split(" ")
 spacing_list = [float(i) for i in spacing_list if i != ""]
@@ -36,7 +36,7 @@ max_ram_per_module, time_per_module = dict(), dict()
 module_names = {"vol_creation_start": "Volume creation",
                 "opt_sim_start": "Optical simulation",
                 "ac_sim_start": "Acoustic simulation",
-                "rec_start": "Image reconstructoin",
+                "rec_start": "Image reconstruction",
                 "crop_start": "Field of view cropping"}
 modules = module_names.keys()
 for module in modules:
@@ -117,7 +117,8 @@ for sp, spacing in enumerate(spacing_list):
             plt.close()
             # exit()
 plt.figure(figsize=(15, 7))
-for module in modules:
+colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+for m, module in enumerate(modules):
     std_ram_list = list()
     for spacing in spacing_list:
         run_list = list()
@@ -131,10 +132,11 @@ for module in modules:
     max_lists = sorted(max_ram_per_module[module].items())
     x, y = zip(*max_lists)
 
-    plt.plot(x, np.array(y) / 1000, label=module_names[module])
-    plt.fill_between(x, (np.array(y) - np.array(std_ram_list))/1000, (np.array(y) + np.array(std_ram_list))/1000, alpha=0.5)
+    plt.plot(x, np.array(y) / 1000, label=module_names[module], color=colors[m + 1], linewidth=5)
+    plt.fill_between(x, (np.array(y) - np.array(std_ram_list))/1000, (np.array(y) + np.array(std_ram_list))/1000, color=colors[m + 1], alpha=0.5)
 ax = plt.gca()
 ax.invert_xaxis()
+ax.set_facecolor("white")
 plt.legend()
 plt.xlabel("Spacing [mm]")
 plt.ylabel("Peak RAM Usage [GB]")
@@ -146,7 +148,8 @@ else:
 plt.close()
 
 plt.figure(figsize=(15, 7))
-for module in modules:
+
+for m, module in enumerate(modules):
     std_time_list = list()
     for spacing in spacing_list:
         run_list = list()
@@ -159,12 +162,12 @@ for module in modules:
 
     max_lists = sorted(time_per_module[module].items())
     x, y = zip(*max_lists)
-
-    plt.plot(x, y, label=module_names[module])
-    plt.fill_between(x, np.array(y) - np.array(std_time_list), np.array(y) + np.array(std_time_list), alpha=0.5)
+    plt.plot(x, y, label=module_names[module], color=colors[m + 1], linewidth=5)
+    plt.fill_between(x, np.array(y) - np.array(std_time_list), np.array(y) + np.array(std_time_list), color=colors[m + 1], alpha=0.5)
 
 ax = plt.gca()
 ax.invert_xaxis()
+ax.set_facecolor("white")
 plt.legend()
 plt.xlabel("Spacing [mm]")
 plt.ylabel("Runtime [s]")
