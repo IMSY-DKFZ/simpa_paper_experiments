@@ -212,7 +212,7 @@ plt.plot(np.linspace(0, NUM_OUTER_REPETITIONS, NUM_OUTER_REPETITIONS*NUM_INNER_R
          np.reshape(times, (-1, )), linestyle='--', lw=2, zorder=4, label="run time")
 plt.xlabel(f"# Sequential Batch ({NUM_INNER_REPETITIONS} runs per batch)")
 plt.ylabel("Simulation run execution time [s]")
-plt.ylim(10.8, 12.7)
+# plt.ylim(10.8, 12.7)
 plt.legend(loc="best")
 
 plt.subplot(1, 2, 2)
@@ -223,11 +223,13 @@ diff = time - mean                   # Difference between data1 and data2
 md = np.mean(diff)                   # Mean of the difference
 sd = np.std(diff, axis=0)            # Standard deviation of the difference
 
+sigma_mult = 2
+
 plt.title("(b) Distance from mean plot")
 plt.scatter(timepoints, diff)
 plt.axhline(md,           color='orange', linestyle='-', label="mean difference")
-plt.axhline(md + 1.96*sd, color='gray', linestyle='--', label="1.96 $\sigma$")
-plt.axhline(md - 1.96*sd, color='gray', linestyle='--')
+plt.axhline(md + sigma_mult*sd, color='gray', linestyle='--', label="{} $\sigma$".format(sigma_mult))
+plt.axhline(md - sigma_mult*sd, color='gray', linestyle='--')
 plt.legend(loc="best")
 plt.xlabel("Simulation run")
 plt.ylabel("Distance from mean [s]")
