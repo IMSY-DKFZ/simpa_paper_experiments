@@ -12,7 +12,7 @@ from simpa.utils.settings import Settings
 import matplotlib.pyplot as plt
 import numpy as np
 from simpa.utils.path_manager import PathManager
-from simpa.core import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
+from simpa.simulation_components import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
     OpticalForwardModelMcxAdapter, AcousticForwardModelKWaveAdapter, VolumeCreationModelModelBasedAdapter, \
     FieldOfViewCroppingProcessingComponent, VolumeCreationModuleSegmentationBasedAdapter, \
     ReconstructionModuleTimeReversalAdapter

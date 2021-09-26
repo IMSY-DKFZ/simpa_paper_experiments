@@ -2,7 +2,7 @@ from simpa.utils import Tags, SegmentationClasses
 from simpa.utils.path_manager import PathManager
 
 from simpa.core.simulation import simulate
-from simpa.core import VolumeCreationModelModelBasedAdapter
+from simpa.simulation_components import VolumeCreationModelModelBasedAdapter
 from simpa.utils import Settings, TISSUE_LIBRARY
 from simpa.core.device_digital_twins import RSOMExplorerP50
 from simpa.io_handling import load_data_field
