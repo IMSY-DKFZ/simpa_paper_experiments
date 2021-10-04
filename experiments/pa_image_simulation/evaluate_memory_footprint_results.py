@@ -22,7 +22,7 @@ output_dir = config.output_dir
 # if output_dir is None:
 #     raise AttributeError("Please specify a directory where the memory footprint files are saved!")
 SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
-Test = False
+Test = True
 if Test:
     output_dir = os.path.join(SAVE_PATH, "ram_usage_logs")
     config.spacing_list = "0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4"
@@ -108,8 +108,10 @@ for sp, spacing in enumerate(spacing_list):
                              linewidth=2)
 
             plt.legend(loc="best")
-            plt.xlabel("Time [s]")
-            plt.ylabel("RAM Usage [GB]")
+            plt.xlabel("Time [s]", fontsize=15)
+            plt.ylabel("RAM Usage [GB]", fontsize=15)
+            plt.xticks(fontsize=15)
+            plt.yticks(fontsize=15)
             if SHOW_IMAGE:
                 plt.show()
             else:
@@ -137,9 +139,11 @@ for m, module in enumerate(modules):
 ax = plt.gca()
 ax.invert_xaxis()
 ax.set_facecolor("white")
-plt.legend()
-plt.xlabel("Spacing [mm]")
-plt.ylabel("Peak RAM Usage [GB]")
+plt.legend(prop={"size":20})
+plt.xlabel("Spacing [mm]", fontsize=15)
+plt.ylabel("Peak RAM Usage [GB]", fontsize=15)
+plt.xticks(fontsize=15)
+plt.yticks(fontsize=15)
 plt.semilogy()
 if SHOW_IMAGE:
     plt.show()
@@ -168,9 +172,11 @@ for m, module in enumerate(modules):
 ax = plt.gca()
 ax.invert_xaxis()
 ax.set_facecolor("white")
-plt.legend()
-plt.xlabel("Spacing [mm]")
-plt.ylabel("Runtime [s]")
+plt.legend(prop={"size": 20})
+plt.xlabel("Spacing [mm]", fontsize=15)
+plt.ylabel("Runtime [s]", fontsize=15)
+plt.xticks(fontsize=15)
+plt.yticks(fontsize=15)
 plt.semilogy()
 if SHOW_IMAGE:
     plt.show()

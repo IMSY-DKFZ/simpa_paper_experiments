@@ -14,7 +14,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 VOLUME_WIDTH_HEIGHT_DIM_IN_MM = 50
 VOLUME_PLANAR_DIM_IN_MM = 50
-SPACING = 1.0
+SPACING = 0.5
 RANDOM_SEED = 2736587
 
 path_manager = PathManager()
@@ -119,7 +119,7 @@ wavelength = settings[Tags.WAVELENGTHS][0]
 segmentation_mask = load_data_field(file_path=file_path,
                                     wavelength=wavelength,
                                     data_field=Tags.PROPERTY_SEGMENTATION)
-
+fontsize = 13
 fig = plt.figure(figsize=(7, 7))
 ax = fig.add_subplot(111, projection='3d')
 ax.voxels(segmentation_mask==SegmentationClasses.BLOOD, shade=True, facecolors="red", alpha=0.55)
@@ -128,13 +128,13 @@ ax.set_aspect('auto')
 ax.set_xticks(np.linspace(0, settings[Tags.DIM_VOLUME_X_MM]/settings[Tags.SPACING_MM], 6))
 ax.set_yticks(np.linspace(0, settings[Tags.DIM_VOLUME_Y_MM]/settings[Tags.SPACING_MM], 6))
 ax.set_zticks(np.linspace(0, settings[Tags.DIM_VOLUME_Z_MM]/settings[Tags.SPACING_MM], 6))
-ax.set_xticklabels(np.linspace(0, settings[Tags.DIM_VOLUME_X_MM], 6, dtype=int))
-ax.set_yticklabels(np.linspace(0, settings[Tags.DIM_VOLUME_X_MM], 6, dtype=int))
-ax.set_zticklabels(np.linspace(0, settings[Tags.DIM_VOLUME_X_MM], 6, dtype=int))
+ax.set_xticklabels(np.linspace(0, settings[Tags.DIM_VOLUME_X_MM], 6, dtype=int), fontsize=fontsize)
+ax.set_yticklabels(np.linspace(0, settings[Tags.DIM_VOLUME_X_MM], 6, dtype=int), fontsize=fontsize)
+ax.set_zticklabels(np.linspace(0, settings[Tags.DIM_VOLUME_X_MM], 6, dtype=int), fontsize=fontsize)
 ax.set_zlim(int(settings[Tags.DIM_VOLUME_X_MM]/settings[Tags.SPACING_MM]), 0)
-ax.set_zlabel("Depth [mm]")
-ax.set_xlabel("x width [mm]")
-ax.set_ylabel("y width [mm]")
+ax.set_zlabel("Depth [mm]", fontsize=fontsize)
+ax.set_xlabel("x width [mm]", fontsize=fontsize)
+ax.set_ylabel("y width [mm]", fontsize=fontsize)
 ax.view_init(elev=10., azim=-45)
 plt.savefig(os.path.join(SAVE_PATH, "phantom.svg"), dpi=300)
 plt.show()

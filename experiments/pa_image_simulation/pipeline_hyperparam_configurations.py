@@ -26,22 +26,22 @@ VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 90
 RANDOM_SEED = 500
 spacing_list = [0.35, 0.25, 0.15]
-SHOW_IMAGE = True
+SHOW_IMAGE = False
 
 hyperparam_names = {"Default": "Default\n(2D acoustic simulation\nno frequency response\n no envelope detection\nno bandpass filtering\npressure mode)",
-                    Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: "Default\n+ detector frequency response",
                     Tags.ACOUSTIC_SIMULATION_3D: "Default\n+ 3D acoustic simulation",
-                    Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: "Default\n+ envelope detection",
                     Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING: "Default\n+ bandpass filter",
-                    Tags.RECONSTRUCTION_MODE_DIFFERENTIAL: "Default\n+ differential mode"
+                    Tags.RECONSTRUCTION_MODE_DIFFERENTIAL: "Default\n+ differential mode",
+                    Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: "Default\n+ envelope detection",
+                    "Custom": "Default\n+ bandpass filter\n+ differential mode\n+ envelope detection",
                     }
 
 hyperparam_list = ["Default",
-                   Tags.MODEL_SENSOR_FREQUENCY_RESPONSE,
                    Tags.ACOUSTIC_SIMULATION_3D,
-                   Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION,
                    Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING,
                    Tags.RECONSTRUCTION_MODE_DIFFERENTIAL,
+                   Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION,
+                   "Custom",
                    ]
 img_arr = list()
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
@@ -99,14 +99,17 @@ for spacing in spacing_list:
                                                                      0, 0, 0, 25]))
         pa_device.update_settings_for_use_of_model_based_volume_creator(settings)
 
-        if hyperparam in [Tags.MODEL_SENSOR_FREQUENCY_RESPONSE,
-                          Tags.ACOUSTIC_SIMULATION_3D]:
+        if hyperparam in [Tags.ACOUSTIC_SIMULATION_3D]:
             settings[Tags.ACOUSTIC_MODEL_SETTINGS][hyperparam] = True
         elif hyperparam in [Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION,
                             Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING]:
             settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][hyperparam] = True
         elif hyperparam == Tags.RECONSTRUCTION_MODE_DIFFERENTIAL:
             settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_MODE] = hyperparam
+        elif hyperparam == "Custom":
+            settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_MODE] = Tags.RECONSTRUCTION_MODE_DIFFERENTIAL
+            settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION] = True
+            settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING] = True
 
         SIMUATION_PIPELINE = [
             VolumeCreationModelModelBasedAdapter(settings),
@@ -118,7 +121,7 @@ for spacing in spacing_list:
 
         import time
         timer = time.time()
-        # simulate(SIMUATION_PIPELINE, settings, pa_device)
+        simulate(SIMUATION_PIPELINE, settings, pa_device)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")
