@@ -1,6 +1,6 @@
 from simpa.utils import Tags
 from simpa.utils.path_manager import PathManager
-
+from simpa.io_handling import load_data_field, save_hdf5, load_hdf5
 from simpa.core.simulation import simulate
 from simpa.simulation_components import VolumeCreationModelModelBasedAdapter, OpticalForwardModelMcxAdapter, \
     AcousticForwardModelKWaveAdapter, ImageReconstructionModuleDelayAndSumAdapter, FieldOfViewCroppingProcessingComponent
@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from simpa.utils.libraries.structure_library import define_horizontal_layer_structure_settings, \
     define_vessel_structure_settings, define_circular_tubular_structure_settings, define_background_structure_settings
 from utils.save_directory import get_save_path
+plt.style.use("bmh")
 
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -23,8 +24,10 @@ REPEAT_SIMULATION = False
 NUM_INNER_REPETITIONS = 10
 NUM_OUTER_REPETITIONS = 10
 SAVE_PATH = get_save_path("independent_execution", "independent_execution")
+WAVELENGTH = 800
 
 times = np.zeros((NUM_OUTER_REPETITIONS, NUM_INNER_REPETITIONS))
+images = list()
 
 for outer_idx in range(NUM_OUTER_REPETITIONS):
 
@@ -94,7 +97,7 @@ for outer_idx in range(NUM_OUTER_REPETITIONS):
         Tags.VOLUME_NAME: VOLUME_NAME,
         Tags.SIMULATION_PATH: SAVE_PATH,
         Tags.SPACING_MM: SPACING,
-        Tags.WAVELENGTHS: [800],
+        Tags.WAVELENGTHS: [WAVELENGTH],
         Tags.DIM_VOLUME_Z_MM: VOLUME_WIDTH_HEIGHT_DIM_IN_MM,
         Tags.DIM_VOLUME_X_MM: VOLUME_WIDTH_HEIGHT_DIM_IN_MM,
         Tags.DIM_VOLUME_Y_MM: VOLUME_PLANAR_DIM_IN_MM,
@@ -113,6 +116,7 @@ for outer_idx in range(NUM_OUTER_REPETITIONS):
         Tags.OPTICAL_MODEL_BINARY_PATH: path_manager.get_mcx_binary_path(),
         Tags.LASER_PULSE_ENERGY_IN_MILLIJOULE: 50,
         Tags.MCX_ASSUMED_ANISOTROPY: 0.9,
+        Tags.MCX_SEED: RANDOM_SEED
     })
     settings.set_acoustic_settings({
         Tags.ACOUSTIC_SIMULATION_3D: False,
@@ -157,9 +161,9 @@ for outer_idx in range(NUM_OUTER_REPETITIONS):
     SIMUATION_PIPELINE = [
         VolumeCreationModelModelBasedAdapter(settings),
         OpticalForwardModelMcxAdapter(settings),
-        AcousticForwardModelKWaveAdapter(settings),
-        GaussianNoiseProcessingComponent(settings, "noise_time_series"),
-        ImageReconstructionModuleDelayAndSumAdapter(settings),
+        # AcousticForwardModelKWaveAdapter(settings),
+        # GaussianNoiseProcessingComponent(settings, "noise_time_series"),
+        # ImageReconstructionModuleDelayAndSumAdapter(settings),
         FieldOfViewCroppingProcessingComponent(settings)
     ]
 
@@ -167,15 +171,18 @@ for outer_idx in range(NUM_OUTER_REPETITIONS):
         time_before = time.time()
         if REPEAT_SIMULATION:
             simulate(SIMUATION_PIPELINE, settings, device)
+            recon = load_data_field(file_path, Tags.OPTICAL_MODEL_INITIAL_PRESSURE, WAVELENGTH)
+            images.append(recon)
         needed_time = time.time() - time_before
         times[outer_idx, inner_idx] = needed_time
 
 if REPEAT_SIMULATION:
     np.savez(SAVE_PATH+"/times.npz",
              times=times)
+    save_hdf5({"images": np.array(images)}, file_path + ".hdf5")
 
 times = np.load(SAVE_PATH+"/times.npz")["times"]
-
+images = load_hdf5(file_path + ".hdf5")["images"]
 
 def adjacent_values(vals, q1, q3):
     upper_adjacent_value = q3 + (q3 - q1) * 1.5
@@ -237,3 +244,26 @@ plt.ylabel("Distance from mean [s]")
 plt.tight_layout()
 plt.savefig(SAVE_PATH + "/sequential_imaging.pdf")
 plt.close()
+
+mean_image = np.mean(images, axis=0)
+
+deviations = list()
+for image in images:
+    deviations.append(np.mean(mean_image - image))
+deviations = np.array(deviations)
+mean = np.mean(deviations)
+std = np.std(deviations)
+
+
+plt.title("Distance from mean plot")
+plt.scatter(timepoints, deviations)
+plt.axhline(mean, linestyle='-', label="mean difference")
+plt.axhline(mean + sigma_mult*std, color='gray', linestyle='--', label="{} $\sigma$".format(sigma_mult))
+plt.axhline(mean - sigma_mult*std, color='gray', linestyle='--')
+plt.legend(loc="best")
+plt.xlabel("Simulation run")
+plt.ylabel("Distance from mean [a.u.]")
+plt.show()
+
+
+
