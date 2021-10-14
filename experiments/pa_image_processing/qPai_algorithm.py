@@ -24,6 +24,7 @@ from utils.create_example_tissue import create_qPAI_phantom
 from utils.save_directory import get_save_path
 from visualization.colorbar import col_bar
 from matplotlib_scalebar.scalebar import ScaleBar
+from utils.normalizations import normalize_min_max
 
 
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
@@ -123,7 +124,9 @@ absorption_reconstruction = load_data_field(data_path, Tags.ITERATIVE_qPAI_RESUL
 
 # get ground truth absorption coefficients
 absorption_gt = load_data_field(data_path, Tags.PROPERTY_ABSORPTION_PER_CM, wavelength)
-fluence = load_data_field(data_path, Tags.OPTICAL_MODEL_FLUENCE, wavelength)
+last_fluence = np.load(SAVE_PATH + "/last_fluence_" + VOLUME_NAME + ".npy")
+
+fluence = normalize_min_max(last_fluence)
 
 # rescale ground truth to same dimension as reconstruction (necessary due to resampling in iterative algorithm)
 scale = np.shape(absorption_reconstruction)[0] / np.shape(absorption_gt)[0]  # same as Tags.DOWNSCALE_FACTOR
@@ -148,40 +151,47 @@ cmax = np.max(absorption_gt)
 results_x_z = [absorption_gt[:, y_pos, :], absorption_reconstruction[:, y_pos, :], difference[:, y_pos, :]]
 results_y_z = [absorption_gt[x_pos, :, :], absorption_reconstruction[x_pos, :, :], difference[x_pos, :, :]]
 
-label = ["Absorption coefficients: ${\mu_a}^{gt}$", "Reconstruction: ${\mu_a}^{reconstr.}$",
-         "Difference: ${\mu_a}^{gt} - {\mu_a}^{reconstr.}$"]
+label = ["Absorption coefficients", "Reconstruction",
+         "Difference"]
 
-plt.figure(figsize=(12, 3))
 # plt.subplots_adjust(hspace=0.5)
 # plt.suptitle("Iterative qPAI Reconstruction \n median error = " + str(np.round(median_error, 4)) +
 #              "\n IQR = " + str(np.round(iqr, 4)), fontsize=10)
 
 cmap = "jet"
-
+fontsize = 25
+fontname = "Cmr10"
 for i, quantity in enumerate(results_x_z):
-    plt.subplot(1, len(results_x_z) + 1, i + 1)
     # if i == 0:
     #     plt.ylabel("x-z", fontsize=10)
-    plt.title(label[i], fontsize=10)
+    # plt.title(label[i], fontsize=10)
     if i == 2:
         cmap = "Reds"
     img_plot = plt.imshow(np.rot90(quantity, -1), cmap=cmap)
-    scale_bar = ScaleBar(settings[Tags.SPACING_MM]/scale, units="mm", location="lower left")
+    scale_bar = ScaleBar(settings[Tags.SPACING_MM]/scale, units="mm", location="lower left", font_properties={"family": fontname, "size": fontsize})
     plt.gca().add_artist(scale_bar)
-    col_bar(img_plot)
+    col_bar(img_plot, fontsize=fontsize, fontname=fontname)
     if i in [0, 1]:
         plt.clim(cmin, cmax)
     else:
         plt.clim(np.min(difference), np.max(difference))
-plt.subplot(1, len(results_x_z) + 1, i+2)
+    plt.tight_layout()
+    if SHOW_IMAGE:
+        plt.show()
+        plt.close()
+    else:
+        plt.savefig(os.path.join(SAVE_PATH, "{}.svg".format(label[i])))
+        plt.close()
+
 img_plot = plt.imshow(np.rot90(fluence[:, y_pos, :], -1), cmap="jet")
-plt.title("Fluence")
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower left")
+# plt.title("Fluence")
+scale_bar = ScaleBar(settings[Tags.SPACING_MM]/scale, units="mm", location="lower left", font_properties={"family": fontname, "size": fontsize})
 plt.gca().add_artist(scale_bar)
-col_bar(img_plot)
+col_bar(img_plot, fontsize=fontsize, fontname=fontname, ticks=[0.2, 0.4, 0.6, 0.8])
 plt.tight_layout()
 if SHOW_IMAGE:
     plt.show()
+    plt.close()
 else:
-    plt.savefig(os.path.join(SAVE_PATH, "qPAI_Algorithm_result.svg"))
-plt.close()
+    plt.savefig(os.path.join(SAVE_PATH, "fluence.svg"))
+    plt.close()
