@@ -160,7 +160,7 @@ for h, hyperparam in enumerate(hyperparam_list):
         #     gridax.set_title(label)
         if h == 0:
             gridax.text(x=-23, y=160, s="${\Delta}$x =" + str(spacing_list[int(i / len(hyperparam_list))]) + " mm", rotation=90, fontsize=14, fontname="Cmr10")
-            scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower left", font_properties={"family": "Cmr10"})
+            scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower left", font_properties={"family": "Cmr10", "size": 14})
             gridax.add_artist(scale_bar)
         gridax.axis('off')
 
