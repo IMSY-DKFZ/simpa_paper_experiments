@@ -8,6 +8,7 @@ from simpa.utils import Tags, Settings
 from simpa.algorithms.multispectral.linear_unmixing import LinearUnmixingProcessingComponent
 import numpy as np
 from simpa.simulation_components import *
+from simpa.core.simulation import simulate
 from simpa.utils.path_manager import PathManager
 from simpa.io_handling import load_data_field
 from simpa.core.device_digital_twins import MSOTAcuityEcho
@@ -164,37 +165,56 @@ if len(data_shape) == 3:
     mua = mua[:, y_dim, :]
     gt_oxy = gt_oxy[:, y_dim, :]
 
-plt.figure(figsize=(15, 2.5))
-plt.title("sO$_2$ estimation with linear unmixing")
-plt.subplot(1, 4, 1)
-plt.title("Reconstructed PA\nimage @750nm [a.u.]")
-recon = plt.imshow(np.rot90(reconstructed_data/np.max(reconstructed_data), -1)[:, 75:-95])
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center")
-plt.gca().add_artist(scale_bar)
-col_bar(recon)
-plt.clim(0, 1)
-plt.subplot(1, 4, 2)
-plt.title("Ground truth blood\noxygen saturation (gt) [%]")
-gt_im = plt.imshow(np.rot90(gt_oxy, -1)[:, 75:-95])
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center")
-plt.gca().add_artist(scale_bar)
-col_bar(gt_im)
-plt.subplot(1, 4, 3)
-plt.title("Estimated blood\noxygen saturation (est) [%]")
-plt.imshow(np.rot90(sO2, -1)[:, 75:-95])
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center")
-plt.gca().add_artist(scale_bar)
-col_bar(gt_im)
-plt.clim(np.min(gt_oxy), np.max(gt_oxy))
-plt.subplot(1, 4, 4)
-plt.title("Abosolute Error |est-gt| [%]")
-recon = plt.imshow(np.rot90(np.abs(sO2 - gt_oxy), -1)[:, 75:-95], cmap="Reds", vmin=0, vmax=50)
-scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center")
-plt.gca().add_artist(scale_bar)
-col_bar(recon)
-plt.tight_layout()
 SHOW_IMAGE = False
+fontsize = 30
+fontname = "Cmr10"
+# plt.title("Reconstructed PA\nimage @750nm [a.u.]")
+recon = plt.imshow(np.rot90(reconstructed_data/np.max(reconstructed_data), -1)[:, 75:-95])
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center", font_properties={"family": "Cmr10", "size": fontsize})
+plt.gca().add_artist(scale_bar)
+col_bar(recon, fontsize=fontsize, fontname=fontname, ticks=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+plt.clim(0, 1)
+plt.tight_layout()
 if SHOW_IMAGE:
     plt.show()
+    plt.close()
 else:
-    plt.savefig(os.path.join(SAVE_PATH, "Linear_unmixing_result.svg"))
+    plt.savefig(os.path.join(SAVE_PATH, "recon.svg"))
+    plt.close()
+# plt.title("Ground truth blood\noxygen saturation (gt) [%]")
+gt_im = plt.imshow(np.rot90(gt_oxy, -1)[:, 75:-95])
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center", font_properties={"family": "Cmr10", "size": fontsize})
+plt.gca().add_artist(scale_bar)
+col_bar(gt_im, fontsize=fontsize, fontname=fontname, ticks=[0, 20, 40, 60, 80, 100])
+plt.tight_layout()
+if SHOW_IMAGE:
+    plt.show()
+    plt.close()
+else:
+    plt.savefig(os.path.join(SAVE_PATH, "ground_truth.svg"))
+    plt.close()
+# plt.title("Estimated blood\noxygen saturation (est) [%]")
+plt.imshow(np.rot90(sO2, -1)[:, 75:-95])
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center", font_properties={"family": "Cmr10", "size": fontsize})
+plt.gca().add_artist(scale_bar)
+col_bar(gt_im, fontsize=fontsize, fontname=fontname, ticks=[0, 20, 40, 60, 80, 100])
+plt.clim(np.min(gt_oxy), np.max(gt_oxy))
+plt.tight_layout()
+if SHOW_IMAGE:
+    plt.show()
+    plt.close()
+else:
+    plt.savefig(os.path.join(SAVE_PATH, "LU_result.svg"))
+    plt.close()
+# plt.title("Abosolute Error |est-gt| [%]")
+recon = plt.imshow(np.rot90(np.abs(sO2 - gt_oxy), -1)[:, 75:-95], cmap="Reds", vmin=0, vmax=50)
+scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center", font_properties={"family": "Cmr10", "size": fontsize})
+plt.gca().add_artist(scale_bar)
+col_bar(recon, fontsize=fontsize, fontname=fontname, ticks=[0, 10, 20, 30, 40, 50])
+plt.tight_layout()
+if SHOW_IMAGE:
+    plt.show()
+    plt.close()
+else:
+    plt.savefig(os.path.join(SAVE_PATH, "abs_error.svg"))
+    plt.close()
