@@ -37,6 +37,7 @@ SEGMENTATION_MASK_PATH = "/path/to/segmentation/mask"
 SPACING = 0.15625
 RANDOM_SEED = 1234
 WAVELENGTHS = [700]
+SHOW_IMAGE = False
 
 simulation_dictionary = {"Segmentation-based image": dict(),
                          "Model-based image": dict()}
@@ -164,7 +165,6 @@ simulation_dictionary["Model-based image"]["device"] = MSOTAcuityEcho(
     device_position_mm=np.array([40/2, 20/2, -3]),
     field_of_view_extent_mm=np.asarray([-20, 20, 0, 0, 0, 20]))
 
-fig = plt.figure(figsize=(10, 3))
 for i, (mode, dictonary) in enumerate(simulation_dictionary.items()):
     settings = dictonary["settings"]
     device = dictonary["device"]
@@ -185,31 +185,37 @@ for i, (mode, dictonary) in enumerate(simulation_dictionary.items()):
         FieldOfViewCroppingProcessingComponent(settings)
     ]
 
-    simulate(SIMUATION_PIPELINE, settings, device)
+    # simulate(SIMUATION_PIPELINE, settings, device)
 
     recon = load_data_field(SAVE_PATH + "/" + settings[Tags.VOLUME_NAME] + ".hdf5",
                             Tags.RECONSTRUCTED_DATA, wavelength=WAVELENGTHS[0])
 
     recon = normalize_min_max(recon)
-
-    plt.subplot(1, 3, i + 2)
-    plt.title(mode)
-    img_plot = plt.imshow(np.rot90(recon, 3))
-    scale_bar = ScaleBar(SPACING, units="mm")
+    img_to_plot = np.rot90(recon, 3)
+    print(img_to_plot.shape)
+    img_plot = plt.imshow(img_to_plot)
+    scale_bar = ScaleBar(SPACING, units="mm", location="lower left", font_properties={"family": "Cmr10", "size": 20})
     plt.gca().add_artist(scale_bar)
-    col_bar(img_plot)
+    plt.axis("off")
+    if SHOW_IMAGE:
+        plt.show()
+        plt.close()
+    else:
+        plt.savefig(SAVE_PATH + "/{}.svg".format(mode))
+        plt.close()
 
 orig_im, header = nrrd.read(REAL_IMAGE_PATH)
 orig_im = normalize_min_max(orig_im[:, :, 0])
-plt.subplot(1, 3, 1)
-plt.title("Real image")
-img_plot = plt.imshow(np.fliplr(np.rot90(orig_im, 3)))
-scale_bar = ScaleBar(SPACING, units="mm")
+img_to_plot = np.fliplr(np.rot90(orig_im, 3))[:-1, :]
+img_plot = plt.imshow(img_to_plot)
+print(img_to_plot.shape)
+scale_bar = ScaleBar(SPACING, units="mm", location="lower left", font_properties={"family": "Cmr10", "size": 20})
 plt.gca().add_artist(scale_bar)
-col_bar(img_plot)
+plt.axis("off")
 
-SHOW_IMAGE = False
 if SHOW_IMAGE:
     plt.show()
+    plt.close()
 else:
-    plt.savefig(SAVE_PATH + "/Realistic_Forearm_Simulation.svg")
+    plt.savefig(SAVE_PATH + "/real_im.svg")
+    plt.close()
