@@ -17,6 +17,8 @@ parser.add_argument("--output_dir", type=str)
 config = parser.parse_args()
 
 SHOW_IMAGE = False
+fontname = "Cmr10"
+fontsize = 25
 
 output_dir = config.output_dir
 # if output_dir is None:
@@ -107,17 +109,18 @@ for sp, spacing in enumerate(spacing_list):
                              alpha=0.5,
                              linewidth=2)
 
-            plt.legend(loc="best")
-            plt.xlabel("Time [s]", fontsize=15)
-            plt.ylabel("RAM Usage [GB]", fontsize=15)
-            plt.xticks(fontsize=15)
-            plt.yticks(fontsize=15)
+            plt.legend(loc="best", prop={"family": fontname, "size": fontsize})
+            plt.xlabel("Time [s]", fontsize=15, fontname=fontname)
+            plt.ylabel("RAM Usage [GB]", fontsize=15, fontname=fontname)
+            plt.xticks(fontsize=15, fontname=fontname)
+            plt.yticks(fontsize=15, fontname=fontname)
             if SHOW_IMAGE:
                 plt.show()
             else:
                 plt.savefig(os.path.join(SAVE_PATH, "Example_RAM_curve.svg"))
             plt.close()
             # exit()
+linestyles = ["solid", "dashed", "dashdot", "dotted", (0, (3, 1, 1, 1, 1, 1))]
 plt.figure(figsize=(15, 7))
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 for m, module in enumerate(modules):
@@ -134,16 +137,17 @@ for m, module in enumerate(modules):
     max_lists = sorted(max_ram_per_module[module].items())
     x, y = zip(*max_lists)
 
-    plt.plot(x, np.array(y) / 1000, label=module_names[module], color=colors[m + 1], linewidth=5)
+    plt.plot(x, np.array(y) / 1000, label=module_names[module], color=colors[m + 1], linewidth=5, linestyle=linestyles[m])
     plt.fill_between(x, (np.array(y) - np.array(std_ram_list))/1000, (np.array(y) + np.array(std_ram_list))/1000, color=colors[m + 1], alpha=0.5)
+
 ax = plt.gca()
 ax.invert_xaxis()
 ax.set_facecolor("white")
-plt.legend(prop={"size":20})
-plt.xlabel("Spacing [mm]", fontsize=15)
-plt.ylabel("Peak RAM Usage [GB]", fontsize=15)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
+plt.legend(prop={"family": fontname, "size": fontsize})
+plt.xlabel("Spacing [mm]", fontsize=fontsize, fontname=fontname)
+plt.ylabel("Peak RAM Usage [GB]", fontsize=fontsize, fontname=fontname)
+plt.xticks(fontsize=fontsize, fontname=fontname)
+plt.yticks(fontsize=fontsize, fontname=fontname)
 plt.semilogy()
 if SHOW_IMAGE:
     plt.show()
@@ -152,7 +156,7 @@ else:
 plt.close()
 
 plt.figure(figsize=(15, 7))
-
+# plt.rcParams["font.family"]
 for m, module in enumerate(modules):
     std_time_list = list()
     for spacing in spacing_list:
@@ -166,17 +170,17 @@ for m, module in enumerate(modules):
 
     max_lists = sorted(time_per_module[module].items())
     x, y = zip(*max_lists)
-    plt.plot(x, y, label=module_names[module], color=colors[m + 1], linewidth=5)
+    plt.plot(x, y, label=module_names[module], color=colors[m + 1], linewidth=5, linestyle=linestyles[m])
     plt.fill_between(x, np.array(y) - np.array(std_time_list), np.array(y) + np.array(std_time_list), color=colors[m + 1], alpha=0.5)
 
 ax = plt.gca()
 ax.invert_xaxis()
 ax.set_facecolor("white")
-plt.legend(prop={"size": 20})
-plt.xlabel("Spacing [mm]", fontsize=15)
-plt.ylabel("Runtime [s]", fontsize=15)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
+plt.legend(prop={"family": fontname, "size": fontsize})
+plt.xlabel("Spacing [mm]", fontsize=fontsize, fontname=fontname)
+plt.ylabel("Runtime [s]", fontsize=fontsize, fontname=fontname)
+plt.xticks(fontsize=fontsize, fontname=fontname)
+plt.yticks(fontsize=fontsize, fontname=fontname)
 plt.semilogy()
 if SHOW_IMAGE:
     plt.show()
