@@ -4,10 +4,7 @@ SPDX-FileCopyrightText: 2021 VISION Lab, Cancer Research UK Cambridge Institute 
 SPDX-License-Identifier: MIT
 """
 
-from simpa.utils import Tags, TISSUE_LIBRARY
-from simpa.utils.libraries.structure_library import define_horizontal_layer_structure_settings,\
-    define_circular_tubular_structure_settings, define_elliptical_tubular_structure_settings
-from simpa.core.simulation import simulate
+from simpa.utils import Tags
 from simpa.utils.settings import Settings
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,14 +23,32 @@ from matplotlib_scalebar.scalebar import ScaleBar
 from visualization.colorbar import col_bar
 from utils.normalizations import normalize_min_max
 from utils.save_directory import get_save_path
+from zenodo_get import zenodo_get
+from zipfile import ZipFile
 
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 path_manager = PathManager()
 SAVE_PATH = get_save_path("pa_image_simulation", "Realistic_Forearm_Simulation")
+example_data_folder = "example_data"
 
-REAL_IMAGE_PATH = "/path/to/real/image"
-SEGMENTATION_MASK_PATH = "/path/to/segmentation/mask"
+if "example_data.zip" not in os.listdir(SAVE_PATH):
+    cmd = list()
+    cmd.append("941302")
+    cmd.append("-s")
+    cmd.append("-t")
+    cmd.append("100.")
+    cmd.append("-o")
+    cmd.append(SAVE_PATH)
+    zenodo_get(cmd)
+    os.remove(os.path.join(SAVE_PATH, "md5sums.txt"))
+
+if example_data_folder not in os.listdir(SAVE_PATH):
+    with ZipFile(os.path.join(SAVE_PATH, f"{example_data_folder}.zip")) as zip_ref:
+        zip_ref.extractall(os.path.join(SAVE_PATH))
+
+REAL_IMAGE_PATH = os.path.join(SAVE_PATH, example_data_folder, "real_pa_forearm_image.nrrd")
+SEGMENTATION_MASK_PATH = os.path.join(SAVE_PATH, example_data_folder, "real_pa_forearm_image_annotated.nrrd")
 SPACING = 0.15625
 RANDOM_SEED = 1234
 WAVELENGTHS = [700]
