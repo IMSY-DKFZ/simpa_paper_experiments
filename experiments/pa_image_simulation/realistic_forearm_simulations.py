@@ -11,8 +11,8 @@ import numpy as np
 from simpa.utils.path_manager import PathManager
 from simpa.simulation_components import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
     OpticalForwardModelMcxAdapter, AcousticForwardModelKWaveAdapter, VolumeCreationModelModelBasedAdapter, \
-    FieldOfViewCroppingProcessingComponent, VolumeCreationModuleSegmentationBasedAdapter, \
-    ReconstructionModuleTimeReversalAdapter
+    FieldOfViewCroppingProcessingComponent, VolumeCreationModuleSegmentationBasedAdapter
+from simpa.core.simulation import simulate
 from simpa.core.device_digital_twins import MSOTAcuityEcho
 from copy import deepcopy
 import nrrd
@@ -20,9 +20,10 @@ from simpa.io_handling import load_data_field
 from utils.create_example_tissue import create_realistic_forearm_tissue, create_forearm_segmentation_tissue, \
     segmention_class_mapping
 from matplotlib_scalebar.scalebar import ScaleBar
-from visualization.colorbar import col_bar
 from utils.normalizations import normalize_min_max
 from utils.save_directory import get_save_path
+from utils.basic_settings import create_basic_optical_settings, create_basic_acoustic_settings, \
+    create_basic_reconstruction_settings
 from zenodo_get import zenodo_get
 from zipfile import ZipFile
 
@@ -36,8 +37,6 @@ if "example_data.zip" not in os.listdir(SAVE_PATH):
     cmd = list()
     cmd.append("941302")
     cmd.append("-s")
-    cmd.append("-t")
-    cmd.append("100.")
     cmd.append("-o")
     cmd.append(SAVE_PATH)
     zenodo_get(cmd)
@@ -48,6 +47,8 @@ if example_data_folder not in os.listdir(SAVE_PATH):
         zip_ref.extractall(os.path.join(SAVE_PATH))
 
 REAL_IMAGE_PATH = os.path.join(SAVE_PATH, example_data_folder, "real_pa_forearm_image.nrrd")
+# REAL_IMAGE_PATH = "/home/kris/Work/Data/simpa_paper/Study_75_Scan_11_pa_01.nrrd"
+# SEGMENTATION_MASK_PATH = "/home/kris/Work/Data/simpa_paper/Study_75_Scan_11_pa_01.nrrd"
 SEGMENTATION_MASK_PATH = os.path.join(SAVE_PATH, example_data_folder, "real_pa_forearm_image_annotated.nrrd")
 SPACING = 0.15625
 RANDOM_SEED = 1234
@@ -70,56 +71,13 @@ seg_settings[Tags.GPU] = True
 
 np.random.seed(RANDOM_SEED)
 
-seg_settings.set_optical_settings({
-    Tags.OPTICAL_MODEL_NUMBER_PHOTONS: 1e7,
-    Tags.OPTICAL_MODEL_BINARY_PATH: path_manager.get_mcx_binary_path(),
-    Tags.LASER_PULSE_ENERGY_IN_MILLIJOULE: 50,
-    Tags.MCX_ASSUMED_ANISOTROPY: 0.9,
-})
+seg_settings.set_optical_settings(create_basic_optical_settings(path_manager))
 
-seg_settings.set_acoustic_settings({
-    Tags.ACOUSTIC_SIMULATION_3D: False,
-    Tags.ACOUSTIC_MODEL_BINARY_PATH: path_manager.get_matlab_binary_path(),
-    Tags.PROPERTY_ALPHA_POWER: 1.05,
-    Tags.SENSOR_RECORD: "p",
-    Tags.PMLInside: False,
-    Tags.PMLSize: [31, 32],
-    Tags.PMLAlpha: 1.5,
-    Tags.PlotPML: False,
-    Tags.RECORDMOVIE: False,
-    Tags.MOVIENAME: "visualization_log",
-    Tags.ACOUSTIC_LOG_SCALE: True,
-    Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: False,
-    Tags.INITIAL_PRESSURE_SMOOTHING: True,
-})
+seg_settings.set_acoustic_settings(create_basic_acoustic_settings(path_manager))
 
-seg_settings.set_reconstruction_settings({
-    Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING: False,
-    Tags.ACOUSTIC_MODEL_BINARY_PATH: path_manager.get_matlab_binary_path(),
-    Tags.ACOUSTIC_SIMULATION_3D: False,
-    Tags.PROPERTY_ALPHA_POWER: 0.00,
-    Tags.TUKEY_WINDOW_ALPHA: 0.5,
-    Tags.BANDPASS_CUTOFF_LOWPASS: int(8e6),
-    Tags.BANDPASS_CUTOFF_HIGHPASS: int(0.1e4),
-    Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: True,
-    Tags.RECONSTRUCTION_BMODE_METHOD: Tags.RECONSTRUCTION_BMODE_METHOD_HILBERT_TRANSFORM,
-    Tags.RECONSTRUCTION_APODIZATION_METHOD: Tags.RECONSTRUCTION_APODIZATION_BOX,
-    Tags.RECONSTRUCTION_MODE: Tags.RECONSTRUCTION_MODE_DIFFERENTIAL,
-    Tags.SENSOR_RECORD: "p",
-    Tags.PMLInside: False,
-    Tags.PMLSize: [31, 32],
-    Tags.PMLAlpha: 1.5,
-    Tags.PlotPML: False,
-    Tags.RECORDMOVIE: False,
-    Tags.MOVIENAME: "visualization_log",
-    Tags.ACOUSTIC_LOG_SCALE: True,
-    Tags.PROPERTY_SPEED_OF_SOUND: 1540,
-    Tags.PROPERTY_ALPHA_COEFF: 0.01,
-    Tags.PROPERTY_DENSITY: 1000,
-    Tags.SPACING_MM: SPACING,
-    Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: False,
-    Tags.INITIAL_PRESSURE_SMOOTHING: False,
-})
+seg_settings.set_reconstruction_settings(create_basic_reconstruction_settings(path_manager, SPACING))
+seg_settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION] = True
+seg_settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_MODE] = Tags.RECONSTRUCTION_MODE_DIFFERENTIAL
 
 seg_settings["noise_initial_pressure"] = {
     Tags.NOISE_MEAN: 1,
@@ -200,7 +158,7 @@ for i, (mode, dictonary) in enumerate(simulation_dictionary.items()):
         FieldOfViewCroppingProcessingComponent(settings)
     ]
 
-    # simulate(SIMUATION_PIPELINE, settings, device)
+    simulate(SIMUATION_PIPELINE, settings, device)
 
     recon = load_data_field(SAVE_PATH + "/" + settings[Tags.VOLUME_NAME] + ".hdf5",
                             Tags.RECONSTRUCTED_DATA, wavelength=WAVELENGTHS[0])

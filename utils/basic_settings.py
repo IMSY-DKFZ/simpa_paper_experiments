@@ -27,7 +27,7 @@ def create_basic_acoustic_settings(path_manager):
         Tags.MOVIENAME: "visualization_log",
         Tags.ACOUSTIC_LOG_SCALE: True,
         Tags.MODEL_SENSOR_FREQUENCY_RESPONSE: False,
-        Tags.INITIAL_PRESSURE_SMOOTHING: False,
+        Tags.INITIAL_PRESSURE_SMOOTHING: True,
     }
     return acoustic_settings
 
