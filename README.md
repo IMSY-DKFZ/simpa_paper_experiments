@@ -13,11 +13,12 @@ https://www.github.com/jgroehl/mcx
 
 After the successful installation of SIMPA, this package can be installed similarly:
 1. `git clone https://github.com/CAMI-DKFZ/simpa_paper_experiments.git`
-2. `git pull`
+2. `cd simpa_paper_experiments`
+3. `git pull`
 
-Make sure that you have your preferred virtual environment activated.
-1. `cd simpa_paper_experiments`
-2. `pip install -r requirements.txt`
+Make sure that you have your preferred virtual environment activated and run in the `simpa_paper_experiments` folder:
+1. `pip install -r requirements.txt`
+2. `python setup.py develop`
 
 ## Run experiments
 
