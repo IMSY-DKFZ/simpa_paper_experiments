@@ -47,8 +47,6 @@ if example_data_folder not in os.listdir(SAVE_PATH):
         zip_ref.extractall(os.path.join(SAVE_PATH))
 
 REAL_IMAGE_PATH = os.path.join(SAVE_PATH, example_data_folder, "real_pa_forearm_image.nrrd")
-# REAL_IMAGE_PATH = "/home/kris/Work/Data/simpa_paper/Study_75_Scan_11_pa_01.nrrd"
-# SEGMENTATION_MASK_PATH = "/home/kris/Work/Data/simpa_paper/Study_75_Scan_11_pa_01.nrrd"
 SEGMENTATION_MASK_PATH = os.path.join(SAVE_PATH, example_data_folder, "real_pa_forearm_image_annotated.nrrd")
 SPACING = 0.15625
 RANDOM_SEED = 1234
