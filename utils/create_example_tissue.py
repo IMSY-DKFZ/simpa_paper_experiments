@@ -7,46 +7,57 @@ from scipy.ndimage import zoom
 
 def create_example_tissue():
     tissue_dict = Settings()
-    tissue_dict[Tags.BACKGROUND] = define_background_structure_settings(molecular_composition=TISSUE_LIBRARY.ultrasound_gel())
-    tissue_dict["epidermis"] = define_horizontal_layer_structure_settings(z_start_mm=2+0, thickness_mm=2,
+    tissue_dict[Tags.BACKGROUND] = define_background_structure_settings(
+        molecular_composition=TISSUE_LIBRARY.ultrasound_gel())
+    tissue_dict["epidermis"] = define_horizontal_layer_structure_settings(z_start_mm=2 + 0, thickness_mm=2,
                                                                           adhere_to_deformation=True,
-                                                                          molecular_composition=TISSUE_LIBRARY.constant(0.5, 10, 0.9),
+                                                                          molecular_composition=TISSUE_LIBRARY.constant(
+                                                                              0.5, 10, 0.9),
                                                                           consider_partial_volume=True)
-    tissue_dict["dermis"] = define_horizontal_layer_structure_settings(z_start_mm=2+2, thickness_mm=9,
+    tissue_dict["dermis"] = define_horizontal_layer_structure_settings(z_start_mm=2 + 2, thickness_mm=9,
                                                                        adhere_to_deformation=True,
-                                                                       molecular_composition=TISSUE_LIBRARY.constant(0.05, 10, 0.9),
+                                                                       molecular_composition=TISSUE_LIBRARY.constant(
+                                                                           0.05, 10, 0.9),
                                                                        consider_partial_volume=True)
-    tissue_dict["fat"] = define_horizontal_layer_structure_settings(z_start_mm=2+11, thickness_mm=4,
+    tissue_dict["fat"] = define_horizontal_layer_structure_settings(z_start_mm=2 + 11, thickness_mm=4,
                                                                     adhere_to_deformation=True,
-                                                                    molecular_composition=TISSUE_LIBRARY.constant(0.05, 10, 0.9),
+                                                                    molecular_composition=TISSUE_LIBRARY.constant(0.05,
+                                                                                                                  10,
+                                                                                                                  0.9),
                                                                     consider_partial_volume=True)
-    tissue_dict["vessel_1"] = define_vessel_structure_settings(vessel_start_mm=[25, 0, 2+17],
+    tissue_dict["vessel_1"] = define_vessel_structure_settings(vessel_start_mm=[25, 0, 2 + 17],
                                                                vessel_direction_mm=[-0.05, 1, 0],
                                                                radius_mm=2, bifurcation_length_mm=100,
                                                                curvature_factor=0.01,
-                                                               molecular_composition=TISSUE_LIBRARY.constant(1.3, 10, 0.9),
+                                                               molecular_composition=TISSUE_LIBRARY.constant(1.3, 10,
+                                                                                                             0.9),
                                                                consider_partial_volume=True)
-    tissue_dict["vessel_2"] = define_vessel_structure_settings(vessel_start_mm=[5, 0, 2+17],
+    tissue_dict["vessel_2"] = define_vessel_structure_settings(vessel_start_mm=[5, 0, 2 + 17],
                                                                vessel_direction_mm=[0, 1, 0],
                                                                radius_mm=1.5, bifurcation_length_mm=100,
                                                                curvature_factor=0.01,
-                                                               molecular_composition=TISSUE_LIBRARY.constant(1.3, 10, 0.9),
+                                                               molecular_composition=TISSUE_LIBRARY.constant(1.3, 10,
+                                                                                                             0.9),
                                                                consider_partial_volume=True)
-    tissue_dict["vessel_3"] = define_vessel_structure_settings(vessel_start_mm=[45, 0, 2+19],
+    tissue_dict["vessel_3"] = define_vessel_structure_settings(vessel_start_mm=[45, 0, 2 + 19],
                                                                vessel_direction_mm=[0.05, 1, 0],
                                                                radius_mm=1.5, bifurcation_length_mm=100,
                                                                curvature_factor=0.01,
-                                                               molecular_composition=TISSUE_LIBRARY.constant(1.3, 10, 0.9),
+                                                               molecular_composition=TISSUE_LIBRARY.constant(1.3, 10,
+                                                                                                             0.9),
                                                                consider_partial_volume=True)
-    tissue_dict["vessel_4"] = define_vessel_structure_settings(vessel_start_mm=[25, 0, 2+35],
+    tissue_dict["vessel_4"] = define_vessel_structure_settings(vessel_start_mm=[25, 0, 2 + 35],
                                                                vessel_direction_mm=[0.05, 1, 0],
                                                                radius_mm=6, bifurcation_length_mm=15,
                                                                curvature_factor=0.1,
-                                                               molecular_composition=TISSUE_LIBRARY.constant(1.3, 10, 0.9),
+                                                               molecular_composition=TISSUE_LIBRARY.constant(1.3, 10,
+                                                                                                             0.9),
                                                                consider_partial_volume=True)
     tissue_dict["bone"] = define_circular_tubular_structure_settings(tube_start_mm=[5, 0, 45], tube_end_mm=[5, 50, 45],
                                                                      radius_mm=15,
-                                                                     molecular_composition=TISSUE_LIBRARY.constant(1.3, 10, 0.9),
+                                                                     molecular_composition=TISSUE_LIBRARY.constant(1.3,
+                                                                                                                   10,
+                                                                                                                   0.9),
                                                                      consider_partial_volume=True)
     return tissue_dict
 
