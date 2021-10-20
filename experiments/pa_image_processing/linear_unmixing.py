@@ -122,7 +122,7 @@ pipeline = [
     ImageReconstructionModuleDelayAndSumAdapter(settings),
     FieldOfViewCroppingProcessingComponent(settings),
 ]
-# simulate(pipeline, settings, device)
+simulate(pipeline, settings, device)
 
 # Run linear unmixing component with above specified settings.
 file_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"

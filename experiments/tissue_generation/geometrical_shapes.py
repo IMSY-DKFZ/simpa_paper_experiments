@@ -76,4 +76,4 @@ ax.set_zlim(int(global_settings[Tags.DIM_VOLUME_X_MM]/global_settings[Tags.SPACI
 # ax.set_ylabel("y width [mm]", fontsize=fontsize)
 ax.view_init(elev=10., azim=-45)
 plt.savefig(os.path.join(SAVE_PATH, "geometrical_shapes.svg"), dpi=300)
-plt.show()
+plt.close()

@@ -110,7 +110,7 @@ class CustomDevice(PhotoacousticDevice):
 
 device = CustomDevice()
 
-# simulate(pipeline, settings, device)
+simulate(pipeline, settings, device)
 
 # visualize reconstruction results
 # get simulation output
