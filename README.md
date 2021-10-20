@@ -11,6 +11,14 @@ https://github.com/CAMI-DKFZ/simpa#external-tools-installation-instructions.
 IMPORTANT: You have to build the MCX binary with all custom light sources from this GitHub fork:
 https://www.github.com/jgroehl/mcx
 
+After the successful installation of SIMPA, this package can be installed similarly:
+1. `git clone https://github.com/CAMI-DKFZ/simpa_paper_experiments.git`
+2. `git pull`
+
+Make sure that you have your preferred virtual environment activated.
+1. `cd simpa_paper_experiments`
+2. `pip install -r requirements.txt`
+
 ## Run experiments
 
 Make sure that your SIMPA path config file `path_config.env` contains the paths to MATLAB and the MCX binary and it is located according to:
