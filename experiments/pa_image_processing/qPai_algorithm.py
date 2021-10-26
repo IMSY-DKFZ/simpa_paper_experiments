@@ -125,6 +125,7 @@ absorption_reconstruction = load_data_field(data_path, Tags.ITERATIVE_qPAI_RESUL
 # get ground truth absorption coefficients
 absorption_gt = load_data_field(data_path, Tags.PROPERTY_ABSORPTION_PER_CM, wavelength)
 last_fluence = np.load(SAVE_PATH + "/last_fluence_" + VOLUME_NAME + ".npy")
+os.remove(SAVE_PATH + "/last_fluence_" + VOLUME_NAME + ".npy")
 
 fluence = normalize_min_max(last_fluence)
 
