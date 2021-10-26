@@ -24,7 +24,7 @@ from utils.normalizations import normalize_min_max
 from utils.save_directory import get_save_path
 from utils.basic_settings import create_basic_optical_settings, create_basic_acoustic_settings, \
     create_basic_reconstruction_settings
-from zenodo_get import zenodo_get
+from simpa.io_handling.zenodo_download import download_from_zenodo
 from zipfile import ZipFile
 
 import os
@@ -32,15 +32,11 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 path_manager = PathManager()
 SAVE_PATH = get_save_path("pa_image_simulation", "Realistic_Forearm_Simulation")
 example_data_folder = "example_data"
+example_data_folder_zip = f"{example_data_folder}.zip"
 
-if "example_data.zip" not in os.listdir(SAVE_PATH):
-    cmd = list()
-    cmd.append("941302")
-    cmd.append("-s")
-    cmd.append("-o")
-    cmd.append(SAVE_PATH)
-    zenodo_get(cmd)
-    os.remove(os.path.join(SAVE_PATH, "md5sums.txt"))
+if example_data_folder_zip not in os.listdir(SAVE_PATH):
+
+    download_from_zenodo(record_id="941302", save_dir=SAVE_PATH, sandbox=True)
 
 if example_data_folder not in os.listdir(SAVE_PATH):
     with ZipFile(os.path.join(SAVE_PATH, f"{example_data_folder}.zip")) as zip_ref:
