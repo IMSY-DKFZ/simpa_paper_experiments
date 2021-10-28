@@ -24,7 +24,7 @@ output_dir = config.output_dir
 # if output_dir is None:
 #     raise AttributeError("Please specify a directory where the memory footprint files are saved!")
 SAVE_PATH = get_save_path("pa_image_simulation", "Memory_Footprint")
-Test = True
+Test = False
 if Test:
     output_dir = os.path.join(SAVE_PATH, "ram_usage_logs")
     config.spacing_list = "0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4"
@@ -144,7 +144,7 @@ ax = plt.gca()
 ax.invert_xaxis()
 ax.set_facecolor("white")
 plt.legend(prop={"family": fontname, "size": fontsize})
-plt.xlabel("Spacing [mm]", fontsize=fontsize, fontname=fontname)
+plt.xlabel("Resolution [mm]", fontsize=fontsize, fontname=fontname)
 plt.ylabel("Peak RAM Usage [GB]", fontsize=fontsize, fontname=fontname)
 plt.xticks(fontsize=fontsize, fontname=fontname)
 plt.yticks(fontsize=fontsize, fontname=fontname)
@@ -177,8 +177,8 @@ ax = plt.gca()
 ax.invert_xaxis()
 ax.set_facecolor("white")
 plt.legend(prop={"family": fontname, "size": fontsize})
-plt.xlabel("Spacing [mm]", fontsize=fontsize, fontname=fontname)
-plt.ylabel("Runtime [s]", fontsize=fontsize, fontname=fontname)
+plt.xlabel("Resolution [mm]", fontsize=fontsize, fontname=fontname)
+plt.ylabel("Run time [s]", fontsize=fontsize, fontname=fontname)
 plt.xticks(fontsize=fontsize, fontname=fontname)
 plt.yticks(fontsize=fontsize, fontname=fontname)
 plt.semilogy()
