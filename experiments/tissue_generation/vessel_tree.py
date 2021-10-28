@@ -39,11 +39,11 @@ vessel_tree = vessel.geometrical_volume
 #                                                                 adhere_to_deformation=True,
 #                                                                 molecular_composition=TISSUE_LIBRARY.epidermis())
 
-np.random.seed(24782)
-vessel_2_settings = define_vessel_structure_settings([50, 25, 20], [0, -1, 0],
+np.random.seed(247879)
+vessel_2_settings = define_vessel_structure_settings([25, 49, 10], [0, -1, 0],
                                                      molecular_composition=TISSUE_LIBRARY.blood(0.5),
-                                                     radius_mm=3, bifurcation_length_mm=10, radius_variation_factor=0,
-                                                     curvature_factor=0.1)
+                                                     radius_mm=3, bifurcation_length_mm=13, radius_variation_factor=0.1,
+                                                     curvature_factor=0.06)
 
 vessel_2 = VesselStructure(global_settings, vessel_2_settings)
 
@@ -72,6 +72,7 @@ ax.set_zlim(int(global_settings[Tags.DIM_VOLUME_X_MM]/global_settings[Tags.SPACI
 # ax.set_zlabel("Depth [mm]", fontsize=fontsize)
 # ax.set_xlabel("x width [mm]", fontsize=fontsize)
 # ax.set_ylabel("y width [mm]", fontsize=fontsize)
+# plt.axis("off")
 ax.view_init(elev=10., azim=-45)
 plt.savefig(os.path.join(SAVE_PATH, "vessel_tree.svg"), dpi=300)
 plt.close()
