@@ -27,7 +27,7 @@ global_settings.set_volume_creation_settings({
 })
 np.random.seed(4315696)
 vessel_settings = define_vessel_structure_settings([25, 0, 30], [0, 1, 0],
-                                                   molecular_composition=TISSUE_LIBRARY.blood(0.5),
+                                                   molecular_composition=TISSUE_LIBRARY.blood(1),
                                                    radius_mm=4, bifurcation_length_mm=15, radius_variation_factor=0,
                                                    curvature_factor=0.1)
 
@@ -35,19 +35,29 @@ vessel = VesselStructure(global_settings, vessel_settings)
 
 vessel_tree = vessel.geometrical_volume
 
-epidermis_settings = define_horizontal_layer_structure_settings(z_start_mm=2, thickness_mm=1,
-                                                                adhere_to_deformation=True,
-                                                                molecular_composition=TISSUE_LIBRARY.epidermis())
+# epidermis_settings = define_horizontal_layer_structure_settings(z_start_mm=2, thickness_mm=1,
+#                                                                 adhere_to_deformation=True,
+#                                                                 molecular_composition=TISSUE_LIBRARY.epidermis())
 
-epidermis = HorizontalLayerStructure(global_settings, epidermis_settings)
-epidermis_layer = epidermis.geometrical_volume
+np.random.seed(24782)
+vessel_2_settings = define_vessel_structure_settings([50, 25, 20], [0, -1, 0],
+                                                     molecular_composition=TISSUE_LIBRARY.blood(0.5),
+                                                     radius_mm=3, bifurcation_length_mm=10, radius_variation_factor=0,
+                                                     curvature_factor=0.1)
+
+vessel_2 = VesselStructure(global_settings, vessel_2_settings)
+
+vessel_tree_2 = vessel_2.geometrical_volume
+
+# epidermis = HorizontalLayerStructure(global_settings, epidermis_settings)
+# epidermis_layer = epidermis.geometrical_volume
 
 print("Plotting...")
 fontsize = 13
 fig = plt.figure(figsize=(7, 7))
 ax = fig.add_subplot(111, projection='3d')
 ax.voxels(vessel_tree, shade=True, facecolors="red", alpha=0.55)
-ax.voxels(epidermis_layer, shade=True, facecolors="brown", alpha=0.55)
+ax.voxels(vessel_tree_2, shade=True, facecolors="blue", alpha=0.55)
 ax.set_aspect('auto')
 # ax.set_xticks(np.linspace(0, global_settings[Tags.DIM_VOLUME_X_MM]/global_settings[Tags.SPACING_MM], 6))
 # ax.set_yticks(np.linspace(0, global_settings[Tags.DIM_VOLUME_Y_MM]/global_settings[Tags.SPACING_MM], 6))
