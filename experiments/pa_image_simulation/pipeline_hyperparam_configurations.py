@@ -5,7 +5,7 @@ from simpa.core.simulation import simulate
 from simpa.utils.settings import Settings
 import numpy as np
 from simpa.utils.path_manager import PathManager
-from simpa.simulation_components import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
+from simpa import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
     OpticalForwardModelMcxAdapter, AcousticForwardModelKWaveAdapter, VolumeCreationModelModelBasedAdapter, \
     FieldOfViewCroppingProcessingComponent, ImageReconstructionModuleSignedDelayMultiplyAndSumAdapter, \
     ReconstructionModuleTimeReversalAdapter
@@ -25,22 +25,22 @@ VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 90
 RANDOM_SEED = 500
-spacing_list = [0.35, 0.25, 0.15]
+spacing_list = [0.55, 0.35, 0.15]
 SHOW_IMAGE = False
 
 hyperparam_names = {"Default": "Default\n(2D acoustic simulation\nno frequency response\n no envelope detection\nno bandpass filtering\npressure mode)",
-                    Tags.ACOUSTIC_SIMULATION_3D: "Default\n+ 3D acoustic simulation",
+                    # Tags.ACOUSTIC_SIMULATION_3D: "Default\n+ 3D acoustic simulation",
                     Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING: "Default\n+ bandpass filter",
                     Tags.RECONSTRUCTION_MODE_DIFFERENTIAL: "Default\n+ differential mode",
-                    Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: "Default\n+ envelope detection",
+                    # Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION: "Default\n+ envelope detection",
                     "Custom": "Default\n+ bandpass filter\n+ differential mode\n+ envelope detection",
                     }
 
 hyperparam_list = ["Default",
-                   Tags.ACOUSTIC_SIMULATION_3D,
+                   # Tags.ACOUSTIC_SIMULATION_3D,
                    Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING,
                    Tags.RECONSTRUCTION_MODE_DIFFERENTIAL,
-                   Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION,
+                   # Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION,
                    "Custom",
                    ]
 img_arr = list()
@@ -121,7 +121,7 @@ for spacing in spacing_list:
 
         import time
         timer = time.time()
-        simulate(SIMUATION_PIPELINE, settings, pa_device)
+        # simulate(SIMUATION_PIPELINE, settings, pa_device)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")
@@ -172,3 +172,15 @@ for h, hyperparam in enumerate(hyperparam_list):
     else:
         plt.savefig(SAVE_PATH + "/{}.svg".format(hyperparam[0] if isinstance(hyperparam, tuple) else hyperparam))
         plt.close()
+        fontsize = 30
+        fontname = "Cmr10"
+        fig = plt.figure()
+        plt.rc("axes", unicode_minus=False)
+        ax = fig.add_axes([0.01, 0.02, 0.025, 0.95])
+        import matplotlib as mpl
+
+        cbar = mpl.colorbar.ColorbarBase(ax, norm=mpl.colors.Normalize(-3, 3), ticks=[-3, -2, -1, 0, 1, 2, 3])
+        for l in cbar.ax.yaxis.get_ticklabels():
+            l.set_family(fontname)
+        cbar.ax.tick_params(labelsize=fontsize/2)
+        plt.savefig(SAVE_PATH + "/cbar_hyperparam.svg", bbox_inches="tight")

@@ -5,10 +5,9 @@ from simpa.core.simulation import simulate
 from simpa.utils.settings import Settings
 import numpy as np
 from simpa.utils.path_manager import PathManager
-from simpa.simulation_components import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
-    OpticalForwardModelMcxAdapter, AcousticForwardModelKWaveAdapter, VolumeCreationModelModelBasedAdapter, \
-    FieldOfViewCroppingProcessingComponent, ImageReconstructionModuleSignedDelayMultiplyAndSumAdapter, \
-    ReconstructionModuleTimeReversalAdapter
+from simpa import DelayAndSumAdapter, GaussianNoise, \
+    MCXAdapter, KWaveAdapter, ModelBasedVolumeCreationAdapter, \
+    FieldOfViewCropping, TimeReversalAdapter
 from simpa.core.device_digital_twins import MSOTAcuityEcho, InVision256TF
 import os
 from utils.create_example_tissue import create_square_phantom
@@ -36,7 +35,7 @@ WAVELENGTHS = [800]
 SAVE_PATH = get_save_path("pa_image_simulation", "Modularity_Examples")
 
 devices = {"MSOTAcuityEcho": MSOTAcuityEcho, "InVision256TF": InVision256TF}
-recon_algorithms = {"TR": ReconstructionModuleTimeReversalAdapter, "DAS": ImageReconstructionModuleDelayAndSumAdapter}
+recon_algorithms = {"TR": TimeReversalAdapter, "DAS": DelayAndSumAdapter}
 # Seed the numpy random configuration prior to creating the global_settings file in
 # order to ensure that the same volume
 # is generated with the same random seed every time.
@@ -89,10 +88,10 @@ for dv, (device_key, device) in enumerate(devices.items()):
                                                         VOLUME_HEIGHT_IN_MM / 2]))
 
     SIMUATION_PIPELINE = [
-        VolumeCreationModelModelBasedAdapter(settings),
-        OpticalForwardModelMcxAdapter(settings),
-        AcousticForwardModelKWaveAdapter(settings),
-        FieldOfViewCroppingProcessingComponent(settings)
+        ModelBasedVolumeCreationAdapter(settings),
+        MCXAdapter(settings),
+        KWaveAdapter(settings),
+        FieldOfViewCropping(settings)
     ]
 
     simulate(SIMUATION_PIPELINE, settings, pa_device)
@@ -114,7 +113,7 @@ for dv, (device_key, device) in enumerate(devices.items()):
 
         recon_module = recon_algorithm(settings)
         recon_module.run(pa_device)
-        cropping_module = FieldOfViewCroppingProcessingComponent(settings)
+        cropping_module = FieldOfViewCropping(settings)
         cropping_module.run(pa_device)
 
         # Load simulated results #

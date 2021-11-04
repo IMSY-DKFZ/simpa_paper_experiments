@@ -9,7 +9,7 @@ from simpa.utils.settings import Settings
 import matplotlib.pyplot as plt
 import numpy as np
 from simpa.utils.path_manager import PathManager
-from simpa.simulation_components import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
+from simpa import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
     OpticalForwardModelMcxAdapter, AcousticForwardModelKWaveAdapter, VolumeCreationModelModelBasedAdapter, \
     FieldOfViewCroppingProcessingComponent, VolumeCreationModuleSegmentationBasedAdapter
 from simpa.core.simulation import simulate
@@ -186,3 +186,13 @@ if SHOW_IMAGE:
 else:
     plt.savefig(SAVE_PATH + "/real_im.svg")
     plt.close()
+    fontsize = 30
+    fontname = "Cmr10"
+    fig = plt.figure()
+    ax = fig.add_axes([0.01, 0.02, 0.05, 0.95])
+    import matplotlib as mpl
+    cbar = mpl.colorbar.ColorbarBase(ax)
+    for l in cbar.ax.yaxis.get_ticklabels():
+        l.set_family(fontname)
+    cbar.ax.tick_params(labelsize=fontsize)
+    plt.savefig(SAVE_PATH + "/cbar_realistic.svg", bbox_inches="tight")
