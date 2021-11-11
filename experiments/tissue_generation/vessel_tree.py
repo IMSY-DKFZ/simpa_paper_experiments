@@ -1,8 +1,5 @@
-from simpa.utils.libraries.structure_library import VesselStructure, define_vessel_structure_settings
-from simpa.utils.libraries.structure_library import HorizontalLayerStructure, define_horizontal_layer_structure_settings
-from simpa.utils import TISSUE_LIBRARY
-from simpa.utils.deformation_manager import create_deformation_settings
-from simpa.utils import Settings, Tags
+from simpa import Tags
+import simpa as sp
 import matplotlib.pyplot as plt
 import numpy as np
 from utils.save_directory import get_save_path
@@ -11,14 +8,14 @@ import os
 SAVE_PATH = get_save_path("Tissue_Generation", "Vessel_Tree")
 np.random.seed(1234)
 
-global_settings = Settings()
+global_settings = sp.Settings()
 global_settings[Tags.SPACING_MM] = 0.5
 global_settings[Tags.DIM_VOLUME_X_MM] = 50
 global_settings[Tags.DIM_VOLUME_Y_MM] = 50
 global_settings[Tags.DIM_VOLUME_Z_MM] = 50
 global_settings.set_volume_creation_settings({
     Tags.SIMULATE_DEFORMED_LAYERS: True,
-    Tags.DEFORMED_LAYERS_SETTINGS: create_deformation_settings(
+    Tags.DEFORMED_LAYERS_SETTINGS: sp.create_deformation_settings(
                 bounds_mm=[[0, global_settings[Tags.DIM_VOLUME_X_MM]],
                            [0, global_settings[Tags.DIM_VOLUME_Y_MM]]],
                 maximum_z_elevation_mm=10,
@@ -26,12 +23,12 @@ global_settings.set_volume_creation_settings({
                 cosine_scaling_factor=1)
 })
 np.random.seed(4315696)
-vessel_settings = define_vessel_structure_settings([25, 0, 30], [0, 1, 0],
-                                                   molecular_composition=TISSUE_LIBRARY.blood(1),
-                                                   radius_mm=4, bifurcation_length_mm=15, radius_variation_factor=0,
-                                                   curvature_factor=0.1)
+vessel_settings = sp.define_vessel_structure_settings([25, 0, 30], [0, 1, 0],
+                                                      molecular_composition=sp.TISSUE_LIBRARY.blood(1),
+                                                      radius_mm=4, bifurcation_length_mm=15, radius_variation_factor=0,
+                                                      curvature_factor=0.1)
 
-vessel = VesselStructure(global_settings, vessel_settings)
+vessel = sp.VesselStructure(global_settings, vessel_settings)
 
 vessel_tree = vessel.geometrical_volume
 
@@ -40,12 +37,13 @@ vessel_tree = vessel.geometrical_volume
 #                                                                 molecular_composition=TISSUE_LIBRARY.epidermis())
 
 np.random.seed(247879)
-vessel_2_settings = define_vessel_structure_settings([25, 49, 10], [0, -1, 0],
-                                                     molecular_composition=TISSUE_LIBRARY.blood(0.5),
-                                                     radius_mm=3, bifurcation_length_mm=13, radius_variation_factor=0.1,
-                                                     curvature_factor=0.06)
+vessel_2_settings = sp.define_vessel_structure_settings([25, 49, 10], [0, -1, 0],
+                                                        molecular_composition=sp.TISSUE_LIBRARY.blood(0.5),
+                                                        radius_mm=3, bifurcation_length_mm=13,
+                                                        radius_variation_factor=0.1,
+                                                        curvature_factor=0.06)
 
-vessel_2 = VesselStructure(global_settings, vessel_2_settings)
+vessel_2 = sp.VesselStructure(global_settings, vessel_2_settings)
 
 vessel_tree_2 = vessel_2.geometrical_volume
 

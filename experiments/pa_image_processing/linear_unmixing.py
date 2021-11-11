@@ -4,14 +4,9 @@ SPDX-FileCopyrightText: 2021 VISION Lab, Cancer Research UK Cambridge Institute 
 SPDX-License-Identifier: MIT
 """
 
-from simpa.utils import Tags, Settings
-from simpa.algorithms.multispectral.linear_unmixing import LinearUnmixingProcessingComponent
+from simpa import Tags
+import simpa as sp
 import numpy as np
-from simpa.simulation_components import *
-from simpa.core.simulation import simulate
-from simpa.utils.path_manager import PathManager
-from simpa.io_handling import load_data_field
-from simpa.core.device_digital_twins import MSOTAcuityEcho
 import matplotlib.pyplot as plt
 from utils.save_directory import get_save_path
 from utils.basic_settings import create_basic_acoustic_settings, create_basic_reconstruction_settings
@@ -25,7 +20,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
-path_manager = PathManager()
+path_manager = sp.PathManager()
 SAVE_PATH = get_save_path("pa_image_processing", "Linear_Unmixing")
 
 # set global params characterizing the simulated volume
@@ -59,9 +54,8 @@ general_settings = {
     Tags.WAVELENGTHS: WAVELENGTHS,
     Tags.GPU: True,
 
-    Tags.LOAD_AND_SAVE_HDF5_FILE_AT_THE_END_OF_SIMULATION_TO_MINIMISE_FILESIZE: True
 }
-settings = Settings(general_settings)
+settings = sp.Settings(general_settings)
 settings.set_volume_creation_settings({
     Tags.SIMULATE_DEFORMED_LAYERS: True,
     Tags.STRUCTURES: create_linear_unmixing_phantom(settings)
@@ -77,7 +71,7 @@ settings["noise_initial_pressure"] = {
             Tags.NOISE_MEAN: 1,
             Tags.NOISE_STD: 0.01,
             Tags.NOISE_MODE: Tags.NOISE_MODE_MULTIPLICATIVE,
-            Tags.DATA_FIELD: Tags.OPTICAL_MODEL_INITIAL_PRESSURE,
+            Tags.DATA_FIELD: Tags.DATA_FIELD_INITIAL_PRESSURE,
             Tags.NOISE_NON_NEGATIVITY_CONSTRAINT: True
         }
 
@@ -93,50 +87,50 @@ settings.set_reconstruction_settings(recon_settings)
 # resulting blood oxygen saturation. We want to perform the algorithm using all three wavelengths defined above.
 # Please take a look at the component for more information.
 wavelengths_to_unmix = [750, 850]
-unmixing_data_field = Tags.RECONSTRUCTED_DATA
+unmixing_data_field = Tags.DATA_FIELD_RECONSTRUCTED_DATA
 settings["linear_unmixing"] = {
     Tags.DATA_FIELD: unmixing_data_field,
     Tags.WAVELENGTHS: wavelengths_to_unmix,
-    Tags.LINEAR_UNMIXING_OXYHEMOGLOBIN_WAVELENGTHS: wavelengths_to_unmix,
-    Tags.LINEAR_UNMIXING_DEOXYHEMOGLOBIN_WAVELENGTHS: wavelengths_to_unmix,
     Tags.LINEAR_UNMIXING_COMPUTE_SO2: True,
-    Tags.SIGNAL_THRESHOLD: 0.00
+    Tags.LINEAR_UNMIXING_SPECTRA: sp.get_simpa_internal_absorption_spectra_by_names(
+        [Tags.SIMPA_NAMED_ABSORPTION_SPECTRUM_OXYHEMOGLOBIN, Tags.SIMPA_NAMED_ABSORPTION_SPECTRUM_DEOXYHEMOGLOBIN]),
+    Tags.SIGNAL_THRESHOLD: 0.00,
 }
 
 # Get device for simulation
-device = MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM/2,
-                                                     VOLUME_PLANAR_DIM_IN_MM/2,
-                                                     0]),
-                        field_of_view_extent_mm=np.asarray([-(2 * np.sin(0.34 / 40 * 128) * 40) / 2,
-                                                            (2 * np.sin(0.34 / 40 * 128) * 40) / 2,
-                                                            0, 0, 0, 20])
-                        )
+device = sp.MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM/2,
+                                                        VOLUME_PLANAR_DIM_IN_MM/2,
+                                                        0]),
+                           field_of_view_extent_mm=np.asarray([-20,
+                                                               20,
+                                                               0, 0, 0, 20])
+                           )
 device.update_settings_for_use_of_model_based_volume_creator(settings)
 
 # Run simulation pipeline for all wavelengths in Tag.WAVELENGTHS
 pipeline = [
-    VolumeCreationModelModelBasedAdapter(settings),
-    OpticalForwardModelMcxAdapter(settings),
-    GaussianNoiseProcessingComponent(settings, "noise_initial_pressure"),
-    AcousticForwardModelKWaveAdapter(settings),
-    ImageReconstructionModuleDelayAndSumAdapter(settings),
-    FieldOfViewCroppingProcessingComponent(settings),
+    sp.ModelBasedVolumeCreationAdapter(settings),
+    sp.MCXAdapter(settings),
+    sp.GaussianNoise(settings, "noise_initial_pressure"),
+    sp.KWaveAdapter(settings),
+    sp.DelayAndSumAdapter(settings),
+    sp.FieldOfViewCropping(settings)
 ]
-simulate(pipeline, settings, device)
+sp.simulate(pipeline, settings, device)
 
 # Run linear unmixing component with above specified settings.
 file_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
 settings[Tags.SIMPA_OUTPUT_PATH] = file_path
-LinearUnmixingProcessingComponent(settings, "linear_unmixing").run()
+sp.LinearUnmixing(settings, "linear_unmixing").run()
 
 # Load linear unmixing result (blood oxygen saturation) and reference absorption for first wavelength.
-lu_results = load_data_field(file_path, Tags.LINEAR_UNMIXING_RESULT)
+lu_results = sp.load_data_field(file_path, Tags.LINEAR_UNMIXING_RESULT)
 sO2 = lu_results["sO2"] * 100
 
-mua = load_data_field(file_path, Tags.PROPERTY_ABSORPTION_PER_CM, wavelength=WAVELENGTHS[0])
-p0 = load_data_field(file_path, Tags.OPTICAL_MODEL_INITIAL_PRESSURE, wavelength=WAVELENGTHS[0])
-gt_oxy = load_data_field(file_path, Tags.PROPERTY_OXYGENATION, wavelength=WAVELENGTHS[0]) * 100
-reconstructed_data = load_data_field(file_path, Tags.RECONSTRUCTED_DATA, wavelength=WAVELENGTHS[0])
+mua = sp.load_data_field(file_path, Tags.DATA_FIELD_ABSORPTION_PER_CM, wavelength=WAVELENGTHS[0])
+p0 = sp.load_data_field(file_path, Tags.DATA_FIELD_INITIAL_PRESSURE, wavelength=WAVELENGTHS[0])
+gt_oxy = sp.load_data_field(file_path, Tags.DATA_FIELD_OXYGENATION, wavelength=WAVELENGTHS[0]) * 100
+DATA_FIELD_RECONSTRUCTED_DATA = sp.load_data_field(file_path, Tags.DATA_FIELD_RECONSTRUCTED_DATA, wavelength=WAVELENGTHS[0])
 
 # PLOT_SPECTRA = True
 # if PLOT_SPECTRA:
@@ -169,7 +163,7 @@ SHOW_IMAGE = False
 fontsize = 30
 fontname = "Cmr10"
 # plt.title("Reconstructed PA\nimage @750nm [a.u.]")
-recon = plt.imshow(np.rot90(reconstructed_data/np.max(reconstructed_data), -1)[:, 75:-95])
+recon = plt.imshow(np.rot90(DATA_FIELD_RECONSTRUCTED_DATA/np.max(DATA_FIELD_RECONSTRUCTED_DATA), -1))
 scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center", font_properties={"family": "Cmr10", "size": fontsize})
 plt.gca().add_artist(scale_bar)
 col_bar(recon, fontsize=fontsize, fontname=fontname, ticks=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
@@ -182,7 +176,7 @@ else:
     plt.savefig(os.path.join(SAVE_PATH, "recon.svg"))
     plt.close()
 # plt.title("Ground truth blood\noxygen saturation (gt) [%]")
-gt_im = plt.imshow(np.rot90(gt_oxy, -1)[:, 75:-95])
+gt_im = plt.imshow(np.rot90(gt_oxy, -1))
 scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center", font_properties={"family": "Cmr10", "size": fontsize})
 plt.gca().add_artist(scale_bar)
 col_bar(gt_im, fontsize=fontsize, fontname=fontname, ticks=[0, 20, 40, 60, 80, 100])
@@ -194,7 +188,7 @@ else:
     plt.savefig(os.path.join(SAVE_PATH, "ground_truth.svg"))
     plt.close()
 # plt.title("Estimated blood\noxygen saturation (est) [%]")
-plt.imshow(np.rot90(sO2, -1)[:, 75:-95])
+plt.imshow(np.rot90(sO2, -1))
 scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center", font_properties={"family": "Cmr10", "size": fontsize})
 plt.gca().add_artist(scale_bar)
 col_bar(gt_im, fontsize=fontsize, fontname=fontname, ticks=[0, 20, 40, 60, 80, 100])
@@ -207,7 +201,7 @@ else:
     plt.savefig(os.path.join(SAVE_PATH, "LU_result.svg"))
     plt.close()
 # plt.title("Abosolute Error |est-gt| [%]")
-recon = plt.imshow(np.rot90(np.abs(sO2 - gt_oxy), -1)[:, 75:-95], cmap="Reds", vmin=0, vmax=50)
+recon = plt.imshow(np.rot90(np.abs(sO2 - gt_oxy), -1), cmap="Reds", vmin=0, vmax=50)
 scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower center", font_properties={"family": "Cmr10", "size": fontsize})
 plt.gca().add_artist(scale_bar)
 col_bar(recon, fontsize=fontsize, fontname=fontname, ticks=[0, 10, 20, 30, 40, 50])

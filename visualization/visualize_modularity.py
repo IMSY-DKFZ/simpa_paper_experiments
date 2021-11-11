@@ -17,5 +17,5 @@ for device_key in devices:
         visualise_data(800, os.path.join(SAVE_PATH, VOLUME_NAME) + ".hdf5",
                        show_absorption=False,
                        show_initial_pressure=True,
-                       show_reconstructed_data=True,
+                       show_DATA_FIELD_RECONSTRUCTED_DATA=True,
                        log_scale=False)

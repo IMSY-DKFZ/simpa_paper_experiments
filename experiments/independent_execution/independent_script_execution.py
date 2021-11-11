@@ -1,12 +1,5 @@
-from simpa.utils import Tags
-from simpa.utils.path_manager import PathManager
-from simpa.io_handling import load_data_field, save_hdf5, load_hdf5
-from simpa.core.simulation import simulate
-from simpa.simulation_components import VolumeCreationModelModelBasedAdapter, OpticalForwardModelMcxAdapter, \
-    AcousticForwardModelKWaveAdapter, ImageReconstructionModuleDelayAndSumAdapter, FieldOfViewCroppingProcessingComponent
-from simpa.utils import Settings, TISSUE_LIBRARY
-from simpa.core.device_digital_twins import PhotoacousticDevice, GaussianBeamIlluminationGeometry, LinearArrayDetectionGeometry
-from simpa.core.processing_components import GaussianNoiseProcessingComponent
+from simpa import Tags
+import simpa as sp
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -40,7 +33,7 @@ for outer_idx in range(NUM_OUTER_REPETITIONS):
         VOLUME_WIDTH_HEIGHT_DIM_IN_MM = 50
         VOLUME_PLANAR_DIM_IN_MM = 50
         SPACING = 1
-        path_manager = PathManager()
+        path_manager = sp.PathManager()
 
         # Seed the numpy random configuration prior to creating the global_settings file in
         # order to ensure that the same volume
@@ -63,7 +56,7 @@ for outer_idx in range(NUM_OUTER_REPETITIONS):
             Tags.GPU: True
         }
 
-        settings = Settings(settings)
+        settings = sp.Settings(settings)
 
         settings.set_volume_creation_settings({
             Tags.STRUCTURES: create_example_tissue(),
@@ -79,29 +72,28 @@ for outer_idx in range(NUM_OUTER_REPETITIONS):
         settings["noise_time_series"] = {
             Tags.NOISE_STD: 100,
             Tags.NOISE_MODE: Tags.NOISE_MODE_ADDITIVE,
-            Tags.DATA_FIELD: Tags.TIME_SERIES_DATA
+            Tags.DATA_FIELD: Tags.DATA_FIELD_TIME_SERIES_DATA
         }
 
-        device = PhotoacousticDevice(device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2,
+        device = sp.PhotoacousticDevice(device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2,
                                                                     VOLUME_PLANAR_DIM_IN_MM/2, 0]))
-        device.set_detection_geometry(LinearArrayDetectionGeometry(
+        device.set_detection_geometry(sp.LinearArrayDetectionGeometry(
             device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2, VOLUME_PLANAR_DIM_IN_MM/2, 0]),
             number_detector_elements=256,
             pitch_mm=0.15))
-        device.add_illumination_geometry(GaussianBeamIlluminationGeometry(beam_radius_mm=25))
+        device.add_illumination_geometry(sp.GaussianBeamIlluminationGeometry(beam_radius_mm=25))
         SIMUATION_PIPELINE = [
-            VolumeCreationModelModelBasedAdapter(settings),
-            OpticalForwardModelMcxAdapter(settings),
-            AcousticForwardModelKWaveAdapter(settings),
-            GaussianNoiseProcessingComponent(settings, "noise_time_series"),
-            ImageReconstructionModuleDelayAndSumAdapter(settings),
-            FieldOfViewCroppingProcessingComponent(settings)
+            sp.ModelBasedVolumeCreationAdapter(settings),
+            sp.MCXAdapter(settings),
+            sp.KWaveAdapter(settings),
+            sp.GaussianNoise(settings, "noise_time_series"),
+            sp.DelayAndSumAdapter(settings),
+            sp.FieldOfViewCropping(settings)
         ]
-
         time_before = time.time()
         if REPEAT_SIMULATION:
-            simulate(SIMUATION_PIPELINE, settings, device)
-            recon = load_data_field(file_path, Tags.OPTICAL_MODEL_INITIAL_PRESSURE, WAVELENGTH)
+            sp.simulate(SIMUATION_PIPELINE, settings, device)
+            recon = sp.load_data_field(file_path, Tags.DATA_FIELD_INITIAL_PRESSURE, WAVELENGTH)
             images.append(recon)
         needed_time = time.time() - time_before
         times[outer_idx, inner_idx] = needed_time
@@ -109,10 +101,10 @@ for outer_idx in range(NUM_OUTER_REPETITIONS):
 if REPEAT_SIMULATION:
     np.savez(SAVE_PATH+"/times.npz",
              times=times)
-    save_hdf5({"images": np.array(images)}, file_path + ".hdf5")
+    sp.save_hdf5({"images": np.array(images)}, file_path + ".hdf5")
 
 times = np.load(SAVE_PATH+"/times.npz")["times"]
-images = load_hdf5(file_path + ".hdf5")["images"]
+images = sp.load_hdf5(file_path + ".hdf5")["images"]
 
 def adjacent_values(vals, q1, q3):
     upper_adjacent_value = q3 + (q3 - q1) * 1.5

@@ -4,32 +4,24 @@ SPDX-FileCopyrightText: 2021 VISION Lab, Cancer Research UK Cambridge Institute 
 SPDX-License-Identifier: MIT
 """
 
-# FIXME temporary workaround for newest Intel architectures
-import os
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
-from simpa.utils import Tags, TISSUE_LIBRARY
-from simpa.core.simulation import simulate
-from simpa.io_handling import load_hdf5, load_data_field
-from simpa.utils.settings import Settings
+from simpa import Tags
+import simpa as sp
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import zoom
-from simpa.simulation_components import VolumeCreationModelModelBasedAdapter, OpticalForwardModelMcxAdapter, \
-    GaussianNoiseProcessingComponent
-from simpa.algorithms.monospectral.iterative_qPAI_algorithm import IterativeqPAIProcessingComponent
-from simpa.utils.path_manager import PathManager
-from simpa.core.device_digital_twins import PhotoacousticDevice, PencilBeamIlluminationGeometry, GaussianBeamIlluminationGeometry, DiskIlluminationGeometry
 from utils.create_example_tissue import create_qPAI_phantom
 from utils.save_directory import get_save_path
 from visualization.colorbar import col_bar
 from matplotlib_scalebar.scalebar import ScaleBar
 from utils.normalizations import normalize_min_max
+# FIXME temporary workaround for newest Intel architectures
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
-path_manager = PathManager()
+path_manager = sp.PathManager()
 SAVE_PATH = get_save_path("pa_image_processing", "qPai_algorithm")
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 12
@@ -57,7 +49,7 @@ general_settings = {
     Tags.WAVELENGTHS: [700]
 }
 
-settings = Settings(general_settings)
+settings = sp.Settings(general_settings)
 
 settings.set_volume_creation_settings({
     # These parameters set the properties for the volume creation
@@ -75,7 +67,7 @@ settings["noise_model"] = {
     Tags.NOISE_MEAN: 1.0,
     Tags.NOISE_STD: 0.01,
     Tags.NOISE_MODE: Tags.NOISE_MODE_MULTIPLICATIVE,
-    Tags.DATA_FIELD: Tags.OPTICAL_MODEL_INITIAL_PRESSURE,
+    Tags.DATA_FIELD: Tags.DATA_FIELD_INITIAL_PRESSURE,
     Tags.NOISE_NON_NEGATIVITY_CONSTRAINT: True
 }
 settings["iterative_qpai_reconstruction"] = {
@@ -92,38 +84,38 @@ settings["iterative_qpai_reconstruction"] = {
 
 # run pipeline including iterative qPAI method
 pipeline = [
-    VolumeCreationModelModelBasedAdapter(settings),
-    OpticalForwardModelMcxAdapter(settings),
-    GaussianNoiseProcessingComponent(settings, "noise_model"),
-    IterativeqPAIProcessingComponent(settings, "iterative_qpai_reconstruction")
+    sp.ModelBasedVolumeCreationAdapter(settings),
+    sp.MCXAdapter(settings),
+    sp.GaussianNoise(settings, "noise_model"),
+    sp.IterativeqPAI(settings, "iterative_qpai_reconstruction")
 ]
 
 
-class CustomDevice(PhotoacousticDevice):
+class CustomDevice(sp.PhotoacousticDevice):
 
     def __init__(self):
         super(CustomDevice, self).__init__(device_position_mm=np.asarray([general_settings[Tags.DIM_VOLUME_X_MM] / 2,
                                                                           general_settings[Tags.DIM_VOLUME_Y_MM] / 2,
                                                                           0]))
-        self.add_illumination_geometry(DiskIlluminationGeometry(beam_radius_mm=2))
+        self.add_illumination_geometry(sp.DiskIlluminationGeometry(beam_radius_mm=2))
 
 
 device = CustomDevice()
 
-simulate(pipeline, settings, device)
+sp.simulate(pipeline, settings, device)
 
 # visualize reconstruction results
 # get simulation output
 data_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
-file = load_hdf5(data_path)
-settings = Settings(file["settings"])
+file = sp.load_hdf5(data_path)
+settings = sp.Settings(file["settings"])
 wavelength = settings[Tags.WAVELENGTHS][0]
 
 # get reconstruction result
-absorption_reconstruction = load_data_field(data_path, Tags.ITERATIVE_qPAI_RESULT, wavelength)
+absorption_reconstruction = sp.load_data_field(data_path, Tags.ITERATIVE_qPAI_RESULT, wavelength)
 
 # get ground truth absorption coefficients
-absorption_gt = load_data_field(data_path, Tags.PROPERTY_ABSORPTION_PER_CM, wavelength)
+absorption_gt = sp.load_data_field(data_path, Tags.DATA_FIELD_ABSORPTION_PER_CM, wavelength)
 last_fluence = np.load(SAVE_PATH + "/last_fluence_" + VOLUME_NAME + ".npy")
 os.remove(SAVE_PATH + "/last_fluence_" + VOLUME_NAME + ".npy")
 

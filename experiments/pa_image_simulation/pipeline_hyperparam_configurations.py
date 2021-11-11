@@ -1,21 +1,10 @@
 import matplotlib.pyplot as plt
-from simpa.utils import Tags
-
-from simpa.core.simulation import simulate
-from simpa.utils.settings import Settings
-import numpy as np
-from simpa.utils.path_manager import PathManager
-from simpa import ImageReconstructionModuleDelayAndSumAdapter, GaussianNoiseProcessingComponent, \
-    OpticalForwardModelMcxAdapter, AcousticForwardModelKWaveAdapter, VolumeCreationModelModelBasedAdapter, \
-    FieldOfViewCroppingProcessingComponent, ImageReconstructionModuleSignedDelayMultiplyAndSumAdapter, \
-    ReconstructionModuleTimeReversalAdapter
-from simpa.core.device_digital_twins import MSOTAcuityEcho, InVision256TF
-import os
+from simpa import Tags
+import simpa as sp
 from utils.create_example_tissue import create_square_phantom
 from utils.basic_settings import create_basic_reconstruction_settings, create_basic_optical_settings, \
     create_basic_acoustic_settings
-from simpa.visualisation.matplotlib_data_visualisation import visualise_data
-from simpa.io_handling import load_data_field
+import numpy as np
 from skimage.transform import rescale
 from utils.save_directory import get_save_path
 from utils.normalizations import standardize
@@ -28,7 +17,8 @@ RANDOM_SEED = 500
 spacing_list = [0.55, 0.35, 0.15]
 SHOW_IMAGE = False
 
-hyperparam_names = {"Default": "Default\n(2D acoustic simulation\nno frequency response\n no envelope detection\nno bandpass filtering\npressure mode)",
+hyperparam_names = {"Default": "Default\n(2D acoustic simulation\nno frequency response\n "
+                               "no envelope detection\nno bandpass filtering\npressure mode)",
                     # Tags.ACOUSTIC_SIMULATION_3D: "Default\n+ 3D acoustic simulation",
                     Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING: "Default\n+ bandpass filter",
                     Tags.RECONSTRUCTION_MODE_DIFFERENTIAL: "Default\n+ differential mode",
@@ -46,7 +36,7 @@ hyperparam_list = ["Default",
 img_arr = list()
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
-path_manager = PathManager()
+path_manager = sp.PathManager()
 
 WAVELENGTHS = [800]
 SAVE_PATH = get_save_path("pa_image_simulation", "Hyperparameter_Configurations")
@@ -74,9 +64,8 @@ for spacing in spacing_list:
                     Tags.VOLUME_CREATOR: Tags.VOLUME_CREATOR_VERSATILE,
                     Tags.GPU: True,
                     Tags.WAVELENGTHS: WAVELENGTHS,
-                    Tags.LOAD_AND_SAVE_HDF5_FILE_AT_THE_END_OF_SIMULATION_TO_MINIMISE_FILESIZE: True
                 }
-        settings = Settings(general_settings)
+        settings = sp.Settings(general_settings)
 
         settings.set_volume_creation_settings({
             Tags.STRUCTURES: create_square_phantom(settings),
@@ -91,12 +80,12 @@ for spacing in spacing_list:
         settings.set_reconstruction_settings(
             create_basic_reconstruction_settings(path_manager, reconstruction_spacing=min(spacing_list)))
 
-        pa_device = MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM / 2,
-                                                                VOLUME_PLANAR_DIM_IN_MM / 2,
-                                                                25]),
-                                   field_of_view_extent_mm=np.array([-(2 * np.sin(0.34 / 40 * 128) * 40) / 2,
-                                                                     (2 * np.sin(0.34 / 40 * 128) * 40) / 2,
-                                                                     0, 0, 0, 25]))
+        pa_device = sp.MSOTAcuityEcho(device_position_mm=np.array([VOLUME_TRANSDUCER_DIM_IN_MM / 2,
+                                                                   VOLUME_PLANAR_DIM_IN_MM / 2,
+                                                                   25]),
+                                      field_of_view_extent_mm=np.array([-(2 * np.sin(0.34 / 40 * 128) * 40) / 2,
+                                                                        (2 * np.sin(0.34 / 40 * 128) * 40) / 2,
+                                                                        0, 0, 0, 25]))
         pa_device.update_settings_for_use_of_model_based_volume_creator(settings)
 
         if hyperparam in [Tags.ACOUSTIC_SIMULATION_3D]:
@@ -107,16 +96,17 @@ for spacing in spacing_list:
         elif hyperparam == Tags.RECONSTRUCTION_MODE_DIFFERENTIAL:
             settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_MODE] = hyperparam
         elif hyperparam == "Custom":
-            settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_MODE] = Tags.RECONSTRUCTION_MODE_DIFFERENTIAL
+            settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_MODE] = \
+                Tags.RECONSTRUCTION_MODE_DIFFERENTIAL
             settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION] = True
             settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_PERFORM_BANDPASS_FILTERING] = True
 
         SIMUATION_PIPELINE = [
-            VolumeCreationModelModelBasedAdapter(settings),
-            OpticalForwardModelMcxAdapter(settings),
-            AcousticForwardModelKWaveAdapter(settings),
-            ImageReconstructionModuleDelayAndSumAdapter(settings),
-            FieldOfViewCroppingProcessingComponent(settings),
+            sp.ModelBasedVolumeCreationAdapter(settings),
+            sp.MCXAdapter(settings),
+            sp.KWaveAdapter(settings),
+            sp.DelayAndSumAdapter(settings),
+            sp.FieldOfViewCropping(settings),
         ]
 
         import time
@@ -132,12 +122,14 @@ for spacing in spacing_list:
             # mua = rescale(mua, spacing / min(spacing_list), order=2, anti_aliasing=True)
             # img_arr.append(mua)
 
-            p0 = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.OPTICAL_MODEL_INITIAL_PRESSURE, WAVELENGTHS[0])
+            p0 = sp.load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.DATA_FIELD_INITIAL_PRESSURE,
+                                    WAVELENGTHS[0])
             p0 = rescale(p0, spacing/min(spacing_list), order=2, anti_aliasing=True)
             norm_p0, _, _ = standardize(p0, log=False)
             img_arr.append(norm_p0)
 
-        recon = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.RECONSTRUCTED_DATA, WAVELENGTHS[0])
+        recon = sp.load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5", Tags.DATA_FIELD_RECONSTRUCTED_DATA,
+                                   WAVELENGTHS[0])
         norm_recon, _, _ = standardize(recon, log=False)
         img_arr.append(norm_recon)
 
@@ -159,8 +151,10 @@ for h, hyperparam in enumerate(hyperparam_list):
         #         label = hyperparam_names[hyperparam_list[i]]
         #     gridax.set_title(label)
         if h == 0:
-            gridax.text(x=-23, y=160, s="${\Delta}$x =" + str(spacing_list[i]) + " mm", rotation=90, fontsize=14, fontname="Cmr10")
-            scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower left", font_properties={"family": "Cmr10", "size": 14})
+            gridax.text(x=-23, y=160, s="${\Delta}$x =" + str(spacing_list[i]) + " mm", rotation=90, fontsize=14,
+                        fontname="Cmr10")
+            scale_bar = ScaleBar(settings[Tags.SPACING_MM], units="mm", location="lower left",
+                                 font_properties={"family": "Cmr10", "size": 14})
             gridax.add_artist(scale_bar)
         gridax.axis('off')
 

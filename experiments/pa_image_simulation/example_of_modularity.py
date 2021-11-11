@@ -1,14 +1,8 @@
 import matplotlib.pyplot as plt
-from simpa.utils import Tags
-
-from simpa.core.simulation import simulate
-from simpa.utils.settings import Settings
 import numpy as np
-from simpa.utils.path_manager import PathManager
-from simpa import DelayAndSumAdapter, GaussianNoise, \
-    MCXAdapter, KWaveAdapter, ModelBasedVolumeCreationAdapter, \
-    FieldOfViewCropping, TimeReversalAdapter
-from simpa.core.device_digital_twins import MSOTAcuityEcho, InVision256TF
+import simpa as sp
+from simpa import Tags
+
 import os
 from utils.create_example_tissue import create_square_phantom
 from utils.basic_settings import create_basic_reconstruction_settings, create_basic_optical_settings, \
@@ -16,7 +10,6 @@ from utils.basic_settings import create_basic_reconstruction_settings, create_ba
 from simpa.visualisation.matplotlib_data_visualisation import visualise_data
 from utils.save_directory import get_save_path
 from matplotlib_scalebar.scalebar import ScaleBar
-from simpa.io_handling import load_data_field, load_hdf5
 from shutil import copy
 from visualization.colorbar import col_bar
 from utils.normalizations import normalize_min_max
@@ -29,13 +22,13 @@ SPACING = 0.1
 RANDOM_SEED = 500
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
-path_manager = PathManager()
+path_manager = sp.PathManager()
 
 WAVELENGTHS = [800]
 SAVE_PATH = get_save_path("pa_image_simulation", "Modularity_Examples")
 
-devices = {"MSOTAcuityEcho": MSOTAcuityEcho, "InVision256TF": InVision256TF}
-recon_algorithms = {"TR": TimeReversalAdapter, "DAS": DelayAndSumAdapter}
+devices = {"MSOTAcuityEcho": sp.MSOTAcuityEcho, "InVision256TF": sp.InVision256TF}
+recon_algorithms = {"TR": sp.TimeReversalAdapter, "DAS": sp.DelayAndSumAdapter}
 # Seed the numpy random configuration prior to creating the global_settings file in
 # order to ensure that the same volume
 # is generated with the same random seed every time.
@@ -60,9 +53,8 @@ for dv, (device_key, device) in enumerate(devices.items()):
         Tags.VOLUME_CREATOR: Tags.VOLUME_CREATOR_VERSATILE,
         Tags.GPU: True,
         Tags.WAVELENGTHS: WAVELENGTHS,
-        Tags.LOAD_AND_SAVE_HDF5_FILE_AT_THE_END_OF_SIMULATION_TO_MINIMISE_FILESIZE: True
     }
-    settings = Settings(general_settings)
+    settings = sp.Settings(general_settings)
 
     settings.set_volume_creation_settings({
         Tags.STRUCTURES: create_square_phantom(settings),
@@ -88,15 +80,15 @@ for dv, (device_key, device) in enumerate(devices.items()):
                                                         VOLUME_HEIGHT_IN_MM / 2]))
 
     SIMUATION_PIPELINE = [
-        ModelBasedVolumeCreationAdapter(settings),
-        MCXAdapter(settings),
-        KWaveAdapter(settings),
-        FieldOfViewCropping(settings)
+        sp.ModelBasedVolumeCreationAdapter(settings),
+        sp.MCXAdapter(settings),
+        sp.KWaveAdapter(settings),
+        sp.FieldOfViewCropping(settings)
     ]
 
-    simulate(SIMUATION_PIPELINE, settings, pa_device)
-    p0 = load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5",
-                         Tags.OPTICAL_MODEL_INITIAL_PRESSURE, WAVELENGTHS[0])
+    sp.simulate(SIMUATION_PIPELINE, settings, pa_device)
+    p0 = sp.load_data_field(SAVE_PATH + "/" + VOLUME_NAME + ".hdf5",
+                            Tags.DATA_FIELD_INITIAL_PRESSURE, WAVELENGTHS[0])
     p0 = normalize_min_max(p0)
     results[device_key]["Initial Pressure"] = np.rot90(p0, -1)
 
@@ -113,13 +105,13 @@ for dv, (device_key, device) in enumerate(devices.items()):
 
         recon_module = recon_algorithm(settings)
         recon_module.run(pa_device)
-        cropping_module = FieldOfViewCropping(settings)
+        cropping_module = sp.FieldOfViewCropping(settings)
         cropping_module.run(pa_device)
 
         # Load simulated results #
-        file = load_hdf5(SAVE_PATH + "/" + VOLUME_NAME_RECON + ".hdf5")
-        recon = load_data_field(SAVE_PATH + "/" + VOLUME_NAME_RECON + ".hdf5",
-                                Tags.RECONSTRUCTED_DATA, WAVELENGTHS[0])
+        file = sp.load_hdf5(SAVE_PATH + "/" + VOLUME_NAME_RECON + ".hdf5")
+        recon = sp.load_data_field(SAVE_PATH + "/" + VOLUME_NAME_RECON + ".hdf5",
+                                Tags.DATA_FIELD_RECONSTRUCTED_DATA, WAVELENGTHS[0])
         recon = normalize_min_max(recon)
         results[device_key][recon_algorithm_key] = np.rot90(recon, -1)
 

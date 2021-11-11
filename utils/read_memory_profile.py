@@ -25,8 +25,8 @@ def read_most_recent_memory_prof_files(directory, number_of_files: int = 1):
 
 
 if __name__ == "__main__":
-    from simpa.utils.path_manager import PathManager
-    path_manager = PathManager()
+    import simpa as sp
+    path_manager = sp.PathManager()
     memory_profile_folder = os.path.join(path_manager.get_hdf5_file_save_path(), "Memory_Footprint")
     times, mems = read_most_recent_memory_prof_files(memory_profile_folder)
     print(times)

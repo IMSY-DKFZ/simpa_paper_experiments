@@ -108,7 +108,8 @@ for run, gridax in enumerate(img_grid):
     img_to_plot = np.rot90(recon, 3)
     img_plot = gridax.imshow(img_to_plot)
     if run == 8:
-        scale_bar = ScaleBar(SPACING, units="mm", location="lower left", font_properties={"family": "Cmr10", "size": 10})
+        scale_bar = ScaleBar(SPACING, units="mm", location="lower left",
+                             font_properties={"family": "Cmr10", "size": 10})
         gridax.add_artist(scale_bar)
     gridax.axis("off")
 if SHOW_IMAGE:
@@ -117,4 +118,3 @@ if SHOW_IMAGE:
 else:
     plt.savefig(SAVE_PATH + "/dataset_grid.svg")
     plt.close()
-

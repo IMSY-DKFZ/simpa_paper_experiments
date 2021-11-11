@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 import glob
 import os
 import numpy as np
-from simpa.utils import PathManager
 from utils.read_log_file import get_times_from_log_file
 from utils.read_memory_profile import read_memory_prof_file
 import matplotlib.pyplot as plt

@@ -1,4 +1,4 @@
-from simpa.utils import Tags
+from simpa import Tags
 
 
 def create_basic_optical_settings(path_manager):
