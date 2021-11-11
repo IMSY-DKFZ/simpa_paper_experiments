@@ -3,6 +3,8 @@ from simpa.utils.libraries.structure_library import *
 import numpy as np
 import nrrd
 from scipy.ndimage import zoom
+from simpa.utils.calculate import positive_Gauss
+from simpa.utils.libraries.literature_values import *
 
 
 def create_example_tissue():
@@ -370,3 +372,100 @@ def create_realistic_forearm_tissue(settings):
 
     return tissue_dict
 
+
+def create_forearm_dataset_tissue(settings):
+    x_dim = settings[Tags.DIM_VOLUME_X_MM]
+    y_dim = settings[Tags.DIM_VOLUME_Y_MM]
+    z_dim = settings[Tags.DIM_VOLUME_Z_MM]
+
+    background_dictionary = Settings()
+    background_dictionary[Tags.MOLECULE_COMPOSITION] = TISSUE_LIBRARY.constant(1e-10, 1e-10, 1.0)
+    background_dictionary[Tags.STRUCTURE_TYPE] = Tags.BACKGROUND
+
+    tissue_dict = Settings()
+    tissue_dict[Tags.BACKGROUND] = background_dictionary
+    tissue_dict["muscle"] = define_horizontal_layer_structure_settings(z_start_mm=1.5, thickness_mm=100,
+                                                                       molecular_composition=
+                                                                       TISSUE_LIBRARY.soft_tissue(blood_volume_fraction=0.05),
+                                                                       priority=1,
+                                                                       consider_partial_volume=True,
+                                                                       adhere_to_deformation=True)
+    tissue_dict["epidermis"] = define_horizontal_layer_structure_settings(z_start_mm=1.5, thickness_mm=0.05,
+                                                                          molecular_composition=
+                                                                          TISSUE_LIBRARY.epidermis(0.01),
+                                                                          priority=8,
+                                                                          consider_partial_volume=True,
+                                                                          adhere_to_deformation=True)
+
+    max_number_superficial_veins = 4
+    max_number_deep_veins = 4
+    max_number_arteries = 4
+
+    number_superficial_veins = np.random.randint(0, max_number_superficial_veins)
+    number_deep_veins = np.random.randint(0, max_number_deep_veins)
+    number_arteries = np.random.randint(1, max_number_arteries)
+
+    for superficial_vein in range(number_superficial_veins):
+        depth = positive_Gauss(4 + MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_MEAN_MM,
+                               MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_STD_MM)
+        radius = positive_Gauss(MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DIAMETER_MEAN_MM/2,
+                                MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DIAMETER_MEAN_MM/2)
+        oxygenation = positive_Gauss(OpticalTissueProperties.VENOUS_OXYGENATION,
+                                     OpticalTissueProperties.VENOUS_OXYGENATION_VARIATION)
+        x_position = np.random.uniform(5, x_dim-5)
+        eccentricity = np.random.uniform(0.2, 0.9)
+
+        tissue_dict[f"superficial_vein_{superficial_vein}"] = define_elliptical_tubular_structure_settings(
+            tube_start_mm=[x_position, 0, depth],
+            tube_end_mm=[x_position, y_dim, depth],
+            molecular_composition=TISSUE_LIBRARY.blood(oxygenation),
+            radius_mm=radius, priority=3, consider_partial_volume=True,
+            adhere_to_deformation=True,
+            eccentricity=eccentricity,
+        )
+
+    for deep_vein in range(number_deep_veins):
+        depth = np.random.uniform(4 + MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_MEAN_MM +
+                                  MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_STD_MM,
+                                  0.7 * z_dim)
+        radius = positive_Gauss(MorphologicalTissueProperties.MEDIAN_VEIN_DIAMETER_MEAN_MM / 2,
+                                MorphologicalTissueProperties.MEDIAN_VEIN_DIAMETER_STD_MM / 2)
+        oxygenation = positive_Gauss(OpticalTissueProperties.VENOUS_OXYGENATION,
+                                     OpticalTissueProperties.VENOUS_OXYGENATION_VARIATION)
+        x_position = np.random.uniform(5, x_dim - 5)
+        eccentricity = np.random.uniform(0.2, 0.9)
+
+        tissue_dict[f"deep_vein_{deep_vein}"] = define_elliptical_tubular_structure_settings(
+            tube_start_mm=[x_position, 0, depth],
+            tube_end_mm=[x_position, y_dim, depth],
+            molecular_composition=TISSUE_LIBRARY.blood(oxygenation),
+            radius_mm=radius, priority=3, consider_partial_volume=True,
+            adhere_to_deformation=True,
+            eccentricity=eccentricity,
+        )
+
+    for artery in range(number_arteries):
+        depth = np.random.uniform(4 + 0.1 * z_dim,
+                                  0.6 * z_dim)
+        if np.random.uniform(0, 1) > 0.5:
+            radius = positive_Gauss(MorphologicalTissueProperties.RADIAL_ARTERY_DIAMETER_MEAN_MM / 2,
+                                    MorphologicalTissueProperties.RADIAL_ARTERY_DIAMETER_STD_MM / 2)
+        else:
+            radius = positive_Gauss(MorphologicalTissueProperties.MEDIAN_ARTERY_DIAMETER_MEAN_MM / 2,
+                                    MorphologicalTissueProperties.MEDIAN_ARTERY_DIAMETER_STD_MM / 2)
+
+        oxygenation = positive_Gauss(OpticalTissueProperties.ARTERIAL_OXYGENATION,
+                                     OpticalTissueProperties.ARTERIAL_OXYGENATION_VARIATION)
+        x_position = np.random.uniform(5, x_dim - 5)
+        eccentricity = np.random.uniform(0.2, 0.8)
+
+        tissue_dict[f"artery_{artery}"] = define_elliptical_tubular_structure_settings(
+            tube_start_mm=[x_position, 0, depth],
+            tube_end_mm=[x_position, y_dim, depth],
+            molecular_composition=TISSUE_LIBRARY.blood(oxygenation),
+            radius_mm=radius, priority=3, consider_partial_volume=True,
+            adhere_to_deformation=True,
+            eccentricity=eccentricity,
+        )
+
+    return tissue_dict
