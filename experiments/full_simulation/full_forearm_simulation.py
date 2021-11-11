@@ -1,15 +1,5 @@
-from simpa.utils import Tags, SegmentationClasses
-from simpa.utils.path_manager import PathManager
-
-from simpa.core.simulation import simulate
-from simpa.simulation_components import VolumeCreationModelModelBasedAdapter, OpticalForwardModelMcxAdapter, \
-    AcousticForwardModelKWaveAdapter, ImageReconstructionModuleDelayAndSumAdapter, \
-    FieldOfViewCroppingProcessingComponent
-from simpa.utils import Settings, TISSUE_LIBRARY
-from simpa.core.device_digital_twins import PhotoacousticDevice, GaussianBeamIlluminationGeometry, \
-    LinearArrayDetectionGeometry
-from simpa.core.processing_components import GaussianNoiseProcessingComponent
-from simpa.io_handling import load_data_field
+import simpa as sp
+from simpa import Tags
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.save_directory import get_save_path
@@ -26,7 +16,7 @@ VOLUME_PLANAR_DIM_IN_MM = 50
 SPACING = 0.3
 RANDOM_SEED = 24618925
 
-path_manager = PathManager()
+path_manager = sp.PathManager()
 SAVE_PATH = get_save_path("full_simulation", "forearm")
 
 # Seed the numpy random configuration prior to creating the global_settings file in
@@ -52,7 +42,7 @@ settings = {
     Tags.GPU: True
 }
 
-settings = Settings(settings)
+settings = sp.Settings(settings)
 
 settings.set_volume_creation_settings({
     Tags.STRUCTURES: create_example_tissue(),
@@ -68,35 +58,35 @@ settings.set_reconstruction_settings(create_basic_reconstruction_settings(path_m
 settings["noise_time_series"] = {
     Tags.NOISE_STD: 100,
     Tags.NOISE_MODE: Tags.NOISE_MODE_ADDITIVE,
-    Tags.DATA_FIELD: Tags.TIME_SERIES_DATA
+    Tags.DATA_FIELD: Tags.DATA_FIELD_TIME_SERIES_DATA
 }
 
-device = PhotoacousticDevice(device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2,
-                                                            VOLUME_PLANAR_DIM_IN_MM/2, 0]))
-device.set_detection_geometry(LinearArrayDetectionGeometry(device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2,
-                                                            VOLUME_PLANAR_DIM_IN_MM/2, 0]),
-                                                           number_detector_elements=256,
-                                                           pitch_mm=0.15))
-device.add_illumination_geometry(GaussianBeamIlluminationGeometry(beam_radius_mm=25))
+device = sp.PhotoacousticDevice(device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2,
+                                                               VOLUME_PLANAR_DIM_IN_MM/2, 0]))
+device.set_detection_geometry(sp.LinearArrayDetectionGeometry(device_position_mm=np.asarray([
+    VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2, VOLUME_PLANAR_DIM_IN_MM/2, 0]),
+                                                              number_detector_elements=256,
+                                                              pitch_mm=0.15))
+device.add_illumination_geometry(sp.GaussianBeamIlluminationGeometry(beam_radius_mm=25))
 SIMUATION_PIPELINE = [
-    VolumeCreationModelModelBasedAdapter(settings),
-    OpticalForwardModelMcxAdapter(settings),
-    AcousticForwardModelKWaveAdapter(settings),
-    GaussianNoiseProcessingComponent(settings, "noise_time_series"),
-    ImageReconstructionModuleDelayAndSumAdapter(settings),
-    FieldOfViewCroppingProcessingComponent(settings)
+    sp.ModelBasedVolumeCreationAdapter(settings),
+    sp.MCXAdapter(settings),
+    sp.KWaveAdapter(settings),
+    sp.GaussianNoise(settings, "noise_time_series"),
+    sp.DelayAndSumAdapter(settings),
+    sp.FieldOfViewCropping(settings)
 ]
 
-simulate(SIMUATION_PIPELINE, settings, device)
+sp.simulate(SIMUATION_PIPELINE, settings, device)
 wavelength = settings[Tags.WAVELENGTHS][0]
 
-segmentation_mask = load_data_field(file_path=file_path,
-                                    wavelength=wavelength,
-                                    data_field=Tags.PROPERTY_SEGMENTATION)
+segmentation_mask = sp.load_data_field(file_path=file_path,
+                                       wavelength=wavelength,
+                                       data_field=Tags.DATA_FIELD_SEGMENTATION)
 
-reco = np.rot90(load_data_field(file_path, wavelength=wavelength, data_field=Tags.RECONSTRUCTED_DATA), -1)
-time_series = np.rot90(load_data_field(file_path, wavelength=wavelength, data_field=Tags.TIME_SERIES_DATA), -1)
-initial_pressure = np.rot90(load_data_field(file_path, wavelength=wavelength, data_field=Tags.OPTICAL_MODEL_INITIAL_PRESSURE), -1)
+reco = np.rot90(sp.load_data_field(file_path, wavelength=wavelength, data_field=Tags.DATA_FIELD_RECONSTRUCTED_DATA), -1)
+time_series = np.rot90(sp.load_data_field(file_path, wavelength=wavelength, data_field=Tags.DATA_FIELD_TIME_SERIES_DATA), -1)
+initial_pressure = np.rot90(sp.load_data_field(file_path, wavelength=wavelength, data_field=Tags.DATA_FIELD_INITIAL_PRESSURE), -1)
 
 plt.figure(figsize=(7, 3))
 plt.subplot(1, 3, 1)

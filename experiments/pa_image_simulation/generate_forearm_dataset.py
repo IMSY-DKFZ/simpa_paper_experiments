@@ -92,7 +92,7 @@ for run in range(dataset_size):
         sp.FieldOfViewCropping(settings)
     ]
 
-    # sp.simulate(SIMUATION_PIPELINE, settings, device)
+    sp.simulate(SIMUATION_PIPELINE, settings, device)
 
 print("####################\nThe Simulations took {}s\n####################".format(time.time() - start_time))
 
