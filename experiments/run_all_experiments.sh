@@ -25,5 +25,6 @@ done
 python3 "$current_dir/pa_image_simulation/realistic_forearm_simulations.py"
 python3 "$current_dir/pa_image_simulation/pipeline_hyperparam_configurations.py"
 python3 "$current_dir/pa_image_simulation/example_of_modularity.py"
+python3 "$current_dir/pa_image_simulation/generate_forearm_dataset.py"
 cd pa_image_simulation
 bash run_memory_footprint_experiment.sh
