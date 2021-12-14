@@ -13,6 +13,7 @@ from utils.basic_settings import create_basic_acoustic_settings, create_basic_re
 from visualization.colorbar import col_bar
 from utils.create_example_tissue import create_linear_unmixing_phantom
 from matplotlib_scalebar.scalebar import ScaleBar
+import time
 
 # FIXME temporary workaround for newest Intel architectures
 import os
@@ -116,12 +117,17 @@ pipeline = [
     sp.DelayAndSumAdapter(settings),
     sp.FieldOfViewCropping(settings)
 ]
+
+start_time = time.time()
 sp.simulate(pipeline, settings, device)
 
 # Run linear unmixing component with above specified settings.
 file_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
 settings[Tags.SIMPA_OUTPUT_PATH] = file_path
 sp.LinearUnmixing(settings, "linear_unmixing").run()
+end_time = time.time() - start_time
+with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
+    out_file.write("{:.2f} s".format(end_time))
 
 # Load linear unmixing result (blood oxygen saturation) and reference absorption for first wavelength.
 lu_results = sp.load_data_field(file_path, Tags.LINEAR_UNMIXING_RESULT)

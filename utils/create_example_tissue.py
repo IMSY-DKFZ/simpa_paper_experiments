@@ -402,12 +402,12 @@ def create_forearm_dataset_tissue(settings):
     number_arteries = np.random.randint(1, max_number_arteries)
 
     for superficial_vein in range(number_superficial_veins):
-        depth = sp.utils.calculate.positive_Gauss(4 + sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_MEAN_MM,
+        depth = sp.utils.calculate.positive_gauss(4 + sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_MEAN_MM,
                                                   sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_STD_MM)
-        radius = sp.utils.calculate.positive_Gauss(
+        radius = sp.utils.calculate.positive_gauss(
             sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DIAMETER_MEAN_MM/2,
             sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DIAMETER_MEAN_MM/2)
-        oxygenation = sp.utils.calculate.positive_Gauss(sp.OpticalTissueProperties.VENOUS_OXYGENATION,
+        oxygenation = sp.utils.calculate.positive_gauss(sp.OpticalTissueProperties.VENOUS_OXYGENATION,
                                                         sp.OpticalTissueProperties.VENOUS_OXYGENATION_VARIATION)
         x_position = np.random.uniform(5, x_dim-5)
         eccentricity = np.random.uniform(0.2, 0.9)
@@ -425,9 +425,9 @@ def create_forearm_dataset_tissue(settings):
         depth = np.random.uniform(4 + sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_MEAN_MM +
                                   sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_STD_MM,
                                   0.7 * z_dim)
-        radius = sp.utils.calculate.positive_Gauss(sp.MorphologicalTissueProperties.MEDIAN_VEIN_DIAMETER_MEAN_MM / 2,
+        radius = sp.utils.calculate.positive_gauss(sp.MorphologicalTissueProperties.MEDIAN_VEIN_DIAMETER_MEAN_MM / 2,
                                                    sp.MorphologicalTissueProperties.MEDIAN_VEIN_DIAMETER_STD_MM / 2)
-        oxygenation = sp.utils.calculate.positive_Gauss(sp.OpticalTissueProperties.VENOUS_OXYGENATION,
+        oxygenation = sp.utils.calculate.positive_gauss(sp.OpticalTissueProperties.VENOUS_OXYGENATION,
                                                         sp.OpticalTissueProperties.VENOUS_OXYGENATION_VARIATION)
         x_position = np.random.uniform(5, x_dim - 5)
         eccentricity = np.random.uniform(0.2, 0.9)
@@ -445,15 +445,15 @@ def create_forearm_dataset_tissue(settings):
         depth = np.random.uniform(4 + 0.1 * z_dim,
                                   0.6 * z_dim)
         if np.random.uniform(0, 1) > 0.5:
-            radius = sp.utils.calculate.positive_Gauss(
+            radius = sp.utils.calculate.positive_gauss(
                 sp.MorphologicalTissueProperties.RADIAL_ARTERY_DIAMETER_MEAN_MM / 2,
                 sp.MorphologicalTissueProperties.RADIAL_ARTERY_DIAMETER_STD_MM / 2)
         else:
-            radius = sp.utils.calculate.positive_Gauss(
+            radius = sp.utils.calculate.positive_gauss(
                 sp.MorphologicalTissueProperties.MEDIAN_ARTERY_DIAMETER_MEAN_MM / 2,
                 sp.MorphologicalTissueProperties.MEDIAN_ARTERY_DIAMETER_STD_MM / 2)
 
-        oxygenation = sp.utils.calculate.positive_Gauss(sp.OpticalTissueProperties.ARTERIAL_OXYGENATION,
+        oxygenation = sp.utils.calculate.positive_gauss(sp.OpticalTissueProperties.ARTERIAL_OXYGENATION,
                                                         sp.OpticalTissueProperties.ARTERIAL_OXYGENATION_VARIATION)
         x_position = np.random.uniform(5, x_dim - 5)
         eccentricity = np.random.uniform(0.2, 0.8)

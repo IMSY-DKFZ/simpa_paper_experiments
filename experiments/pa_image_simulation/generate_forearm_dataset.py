@@ -25,7 +25,7 @@ SPACING = 0.15
 RANDOM_SEED = 1234
 WAVELENGTHS = [700]
 SHOW_IMAGE = False
-dataset_size = 16
+dataset_size = 12
 
 start_time = time.time()
 for run in range(dataset_size):
@@ -94,7 +94,9 @@ for run in range(dataset_size):
 
     sp.simulate(SIMUATION_PIPELINE, settings, device)
 
-print("####################\nThe Simulations took {}s\n####################".format(time.time() - start_time))
+end_time = time.time() - start_time
+with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
+    out_file.write("{:.2f} s".format(end_time))
 
 fig = plt.figure(figsize=(10, 8))
 img_grid = ImageGrid(fig, rect=111, nrows_ncols=(3, 4), axes_pad=0.05)

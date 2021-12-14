@@ -18,7 +18,7 @@ from utils.save_directory import get_save_path
 from utils.basic_settings import create_basic_optical_settings, create_basic_acoustic_settings, \
     create_basic_reconstruction_settings
 from zipfile import ZipFile
-
+import time
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 path_manager = sp.PathManager()
@@ -124,6 +124,7 @@ simulation_dictionary["Model-based image"]["device"] = sp.MSOTAcuityEcho(
     device_position_mm=np.array([40/2, 20/2, -3]),
     field_of_view_extent_mm=np.asarray([-20, 20, 0, 0, 0, 20]))
 
+start_time = time.time()
 for i, (mode, dictonary) in enumerate(simulation_dictionary.items()):
     settings = dictonary["settings"]
     device = dictonary["device"]
@@ -162,6 +163,9 @@ for i, (mode, dictonary) in enumerate(simulation_dictionary.items()):
     else:
         plt.savefig(SAVE_PATH + "/{}.svg".format(mode))
         plt.close()
+end_time = time.time() - start_time
+with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
+    out_file.write("{:.2f} s".format(end_time))
 
 orig_im, header = nrrd.read(REAL_IMAGE_PATH)
 orig_im = normalize_min_max(orig_im[:, :, 0])

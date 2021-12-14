@@ -90,8 +90,12 @@ device = sp.RSOMExplorerP50()
 SIMUATION_PIPELINE = [
     sp.ModelBasedVolumeCreationAdapter(settings)
 ]
-
+import time
+start_time = time.time()
 sp.simulate(SIMUATION_PIPELINE, settings, device)
+end_time = time.time() - start_time
+with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
+    out_file.write("{:.2f} s".format(end_time))
 wavelength = settings[Tags.WAVELENGTHS][0]
 
 segmentation_mask = sp.load_data_field(file_path=file_path,

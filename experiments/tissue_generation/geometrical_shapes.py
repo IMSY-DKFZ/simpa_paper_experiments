@@ -23,7 +23,8 @@ global_settings.set_volume_creation_settings({
                 filter_sigma=0,
                 cosine_scaling_factor=1)
 })
-
+import time
+start_time = time.time()
 sphere_settings = sp.define_spherical_structure_settings(start_mm=[25, 20, 33], radius_mm=10,
                                                          molecular_composition=sp.TISSUE_LIBRARY.epidermis())
 sphere = sp.SphericalStructure(global_settings, sphere_settings).geometrical_volume
@@ -44,7 +45,9 @@ cube_settings = sp.define_rectangular_cuboid_structure_settings(start_mm=[50, 0,
                                                                 extent_mm=[-10, 10, -10],
                                                                 molecular_composition=sp.TISSUE_LIBRARY.epidermis())
 cube = sp.RectangularCuboidStructure(global_settings, cube_settings).geometrical_volume
-
+end_time = time.time() - start_time
+with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
+    out_file.write("{:.2f} s".format(end_time))
 print("Plotting...")
 fontsize = 13
 plt.rcParams["axes.grid"] = True

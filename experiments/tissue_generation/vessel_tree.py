@@ -22,6 +22,9 @@ global_settings.set_volume_creation_settings({
                 filter_sigma=0,
                 cosine_scaling_factor=1)
 })
+
+import time
+start_time = time.time()
 np.random.seed(4315696)
 vessel_settings = sp.define_vessel_structure_settings([25, 0, 30], [0, 1, 0],
                                                       molecular_composition=sp.TISSUE_LIBRARY.blood(1),
@@ -46,7 +49,9 @@ vessel_2_settings = sp.define_vessel_structure_settings([25, 49, 10], [0, -1, 0]
 vessel_2 = sp.VesselStructure(global_settings, vessel_2_settings)
 
 vessel_tree_2 = vessel_2.geometrical_volume
-
+end_time = time.time() - start_time
+with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
+    out_file.write("{:.2f} s".format(end_time))
 # epidermis = HorizontalLayerStructure(global_settings, epidermis_settings)
 # epidermis_layer = epidermis.geometrical_volume
 

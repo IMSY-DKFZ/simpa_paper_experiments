@@ -9,6 +9,8 @@ from skimage.transform import rescale
 from utils.save_directory import get_save_path
 from utils.normalizations import standardize
 from matplotlib_scalebar.scalebar import ScaleBar
+import os
+import time
 
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
@@ -44,6 +46,7 @@ SAVE_PATH = get_save_path("pa_image_simulation", "Hyperparameter_Configurations"
 # Seed the numpy random configuration prior to creating the global_settings file in
 # order to ensure that the same volume
 # is generated with the same random seed every time.
+start_time = time.time()
 np.random.seed(RANDOM_SEED)
 for spacing in spacing_list:
     for i, hyperparam in enumerate(hyperparam_list):
@@ -109,9 +112,8 @@ for spacing in spacing_list:
             sp.FieldOfViewCropping(settings),
         ]
 
-        import time
         timer = time.time()
-        # simulate(SIMUATION_PIPELINE, settings, pa_device)
+        sp.simulate(SIMUATION_PIPELINE, settings, pa_device)
         print("Needed", time.time()-timer, "seconds")
         # TODO global_settings[Tags.SIMPA_OUTPUT_PATH]
         print("Simulating ", RANDOM_SEED, "[Done]")
@@ -132,6 +134,9 @@ for spacing in spacing_list:
                                    WAVELENGTHS[0])
         norm_recon, _, _ = standardize(recon, log=False)
         img_arr.append(norm_recon)
+end_time = time.time() - start_time
+with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
+    out_file.write("{:.2f} s".format(end_time))
 
 from mpl_toolkits.axes_grid1 import ImageGrid
 # hyperparam_list.insert(0, "Initial pressure\n(simulated ground truth)")

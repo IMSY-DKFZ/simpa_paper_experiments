@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import simpa as sp
 from simpa import Tags
-
+import time
 import os
 from utils.create_example_tissue import create_square_phantom
 from utils.basic_settings import create_basic_reconstruction_settings, create_basic_optical_settings, \
@@ -18,7 +18,7 @@ from utils.normalizations import normalize_min_max
 VOLUME_TRANSDUCER_DIM_IN_MM = 90
 VOLUME_PLANAR_DIM_IN_MM = 20
 VOLUME_HEIGHT_IN_MM = 90
-SPACING = 0.1
+SPACING = 0.15
 RANDOM_SEED = 500
 # TODO: Please make sure that a valid path_config.env file is located in your home directory, or that you
 #  point to the correct file in the PathManager().
@@ -35,7 +35,7 @@ recon_algorithms = {"TR": sp.TimeReversalAdapter, "DAS": sp.DelayAndSumAdapter}
 np.random.seed(RANDOM_SEED)
 
 results = dict()
-
+start_time = time.time()
 for dv, (device_key, device) in enumerate(devices.items()):
     results[device_key] = dict()
 
@@ -114,7 +114,9 @@ for dv, (device_key, device) in enumerate(devices.items()):
                                 Tags.DATA_FIELD_RECONSTRUCTED_DATA, WAVELENGTHS[0])
         recon = normalize_min_max(recon)
         results[device_key][recon_algorithm_key] = np.rot90(recon, -1)
-
+end_time = time.time() - start_time
+with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
+    out_file.write("{:.2f} s".format(end_time))
 
 plt.figure(figsize=(10, 6))
 for i, (device, results) in enumerate(results.items()):
