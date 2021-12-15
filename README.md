@@ -9,7 +9,7 @@ https://github.com/CAMI-DKFZ/simpa#simpa-install-instructions.
 In order to make sure that all experiments run smoothly, all the external tools required by SIMPA have to be installed as well:
 https://github.com/CAMI-DKFZ/simpa#external-tools-installation-instructions.
 IMPORTANT: You have to build the MCX binary with all custom light sources from this GitHub fork:
-https://www.github.com/jgroehl/mcx
+https://www.github.com/CAMI-DKFZ/mcx
 
 After the successful installation of SIMPA, this package can be installed similarly:
 1. `git clone https://github.com/CAMI-DKFZ/simpa_paper_experiments.git`
