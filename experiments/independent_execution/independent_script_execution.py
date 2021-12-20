@@ -15,7 +15,6 @@ from utils.basic_settings import create_basic_optical_settings, create_basic_aco
 plt.style.use("bmh")
 
 RANDOM_SEED = 24618925
-np.random.seed(RANDOM_SEED)
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import torch
@@ -24,83 +23,83 @@ fontname = "Cmr10"
 fontsize = 15
 
 REPEAT_SIMULATION = True
-NUM_INNER_REPETITIONS = 10
-NUM_OUTER_REPETITIONS = 10
+REPETITIONS = 100
 SAVE_PATH = get_save_path("independent_execution", "independent_execution")
 WAVELENGTH = 800
 
-times = np.zeros((NUM_OUTER_REPETITIONS, NUM_INNER_REPETITIONS))
+times = np.zeros((REPETITIONS))
 images = list()
 
-for outer_idx in range(NUM_OUTER_REPETITIONS):
-    for inner_idx in range(NUM_INNER_REPETITIONS):
-        VOLUME_WIDTH_HEIGHT_DIM_IN_MM = 50
-        VOLUME_PLANAR_DIM_IN_MM = 50
-        SPACING = 1
-        path_manager = sp.PathManager()
+for idx in range(REPETITIONS):
+    np.random.seed(RANDOM_SEED)
+    VOLUME_WIDTH_HEIGHT_DIM_IN_MM = 50
+    VOLUME_PLANAR_DIM_IN_MM = 50
+    SPACING = 1
+    path_manager = sp.PathManager()
 
-        # Seed the numpy random configuration prior to creating the global_settings file in
-        # order to ensure that the same volume
-        # is generated with the same random seed every time.
+    # Seed the numpy random configuration prior to creating the global_settings file in
+    # order to ensure that the same volume
+    # is generated with the same random seed every time.
 
-        VOLUME_NAME = "ForearmScan" + str(RANDOM_SEED)
-        file_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
+    VOLUME_NAME = "ForearmScan" + str(RANDOM_SEED)
+    file_path = SAVE_PATH + "/" + VOLUME_NAME + ".hdf5"
 
-        settings = {
-            # These parameters set he general propeties of the simulated volume
-            Tags.RANDOM_SEED: RANDOM_SEED,
-            Tags.VOLUME_NAME: VOLUME_NAME,
-            Tags.SIMULATION_PATH: SAVE_PATH,
-            Tags.SPACING_MM: SPACING,
-            Tags.WAVELENGTHS: [WAVELENGTH],
-            Tags.DIM_VOLUME_Z_MM: VOLUME_WIDTH_HEIGHT_DIM_IN_MM,
-            Tags.DIM_VOLUME_X_MM: VOLUME_WIDTH_HEIGHT_DIM_IN_MM,
-            Tags.DIM_VOLUME_Y_MM: VOLUME_PLANAR_DIM_IN_MM,
-            Tags.VOLUME_CREATOR: Tags.VOLUME_CREATOR_VERSATILE,
-            Tags.GPU: True
-        }
+    settings = {
+        # These parameters set he general propeties of the simulated volume
+        Tags.RANDOM_SEED: RANDOM_SEED,
+        Tags.VOLUME_NAME: VOLUME_NAME,
+        Tags.SIMULATION_PATH: SAVE_PATH,
+        Tags.SPACING_MM: SPACING,
+        Tags.WAVELENGTHS: [WAVELENGTH],
+        Tags.DIM_VOLUME_Z_MM: VOLUME_WIDTH_HEIGHT_DIM_IN_MM,
+        Tags.DIM_VOLUME_X_MM: VOLUME_WIDTH_HEIGHT_DIM_IN_MM,
+        Tags.DIM_VOLUME_Y_MM: VOLUME_PLANAR_DIM_IN_MM,
+        Tags.VOLUME_CREATOR: Tags.VOLUME_CREATOR_VERSATILE,
+        Tags.GPU: True
+    }
 
-        settings = sp.Settings(settings)
+    settings = sp.Settings(settings)
 
-        settings.set_volume_creation_settings({
-            Tags.STRUCTURES: create_example_tissue(),
-            Tags.SIMULATE_DEFORMED_LAYERS: True
-        })
-        settings.set_optical_settings(create_basic_optical_settings(path_manager))
-        settings[Tags.OPTICAL_MODEL_SETTINGS][Tags.MCX_SEED] = RANDOM_SEED
+    settings.set_volume_creation_settings({
+        Tags.STRUCTURES: create_example_tissue(),
+        Tags.SIMULATE_DEFORMED_LAYERS: True
+    })
+    settings.set_optical_settings(create_basic_optical_settings(path_manager))
+    settings[Tags.OPTICAL_MODEL_SETTINGS][Tags.MCX_SEED] = RANDOM_SEED
 
-        settings.set_acoustic_settings(create_basic_acoustic_settings(path_manager))
+    settings.set_acoustic_settings(create_basic_acoustic_settings(path_manager))
 
-        settings.set_reconstruction_settings(create_basic_reconstruction_settings(path_manager, SPACING))
+    settings.set_reconstruction_settings(create_basic_reconstruction_settings(path_manager, SPACING))
 
-        settings["noise_time_series"] = {
-            Tags.NOISE_STD: 100,
-            Tags.NOISE_MODE: Tags.NOISE_MODE_ADDITIVE,
-            Tags.DATA_FIELD: Tags.DATA_FIELD_TIME_SERIES_DATA
-        }
+    settings["noise_time_series"] = {
+        Tags.NOISE_STD: 100,
+        Tags.NOISE_MODE: Tags.NOISE_MODE_ADDITIVE,
+        Tags.DATA_FIELD: Tags.DATA_FIELD_TIME_SERIES_DATA
+    }
 
-        device = sp.PhotoacousticDevice(device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2,
-                                                                    VOLUME_PLANAR_DIM_IN_MM/2, 0]))
-        device.set_detection_geometry(sp.LinearArrayDetectionGeometry(
-            device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2, VOLUME_PLANAR_DIM_IN_MM/2, 0]),
-            number_detector_elements=256,
-            pitch_mm=0.15))
-        device.add_illumination_geometry(sp.GaussianBeamIlluminationGeometry(beam_radius_mm=25))
-        SIMUATION_PIPELINE = [
-            sp.ModelBasedVolumeCreationAdapter(settings),
-            sp.MCXAdapter(settings),
-            sp.KWaveAdapter(settings),
-            sp.GaussianNoise(settings, "noise_time_series"),
-            sp.DelayAndSumAdapter(settings),
-            sp.FieldOfViewCropping(settings)
-        ]
-        time_before = time.time()
-        if REPEAT_SIMULATION:
-            sp.simulate(SIMUATION_PIPELINE, settings, device)
-            recon = sp.load_data_field(file_path, Tags.DATA_FIELD_INITIAL_PRESSURE, WAVELENGTH)
-            images.append(recon)
-        needed_time = time.time() - time_before
-        times[outer_idx, inner_idx] = needed_time
+    device = sp.PhotoacousticDevice(device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2,
+                                                                VOLUME_PLANAR_DIM_IN_MM/2, 0]))
+    device.set_detection_geometry(sp.LinearArrayDetectionGeometry(
+        device_position_mm=np.asarray([VOLUME_WIDTH_HEIGHT_DIM_IN_MM/2, VOLUME_PLANAR_DIM_IN_MM/2, 0]),
+        number_detector_elements=256,
+        pitch_mm=0.15))
+    device.add_illumination_geometry(sp.GaussianBeamIlluminationGeometry(beam_radius_mm=25))
+    SIMUATION_PIPELINE = [
+        sp.ModelBasedVolumeCreationAdapter(settings),
+        sp.MCXAdapter(settings),
+        sp.KWaveAdapter(settings),
+        sp.GaussianNoise(settings, "noise_time_series"),
+        sp.DelayAndSumAdapter(settings),
+        sp.FieldOfViewCropping(settings)
+    ]
+    time_before = time.time()
+    if REPEAT_SIMULATION:
+        np.random.seed(RANDOM_SEED)
+        sp.simulate(SIMUATION_PIPELINE, settings, device)
+        recon = sp.load_data_field(file_path, Tags.DATA_FIELD_RECONSTRUCTED_DATA, WAVELENGTH)
+        images.append(recon)
+    needed_time = time.time() - time_before
+    times[idx] = needed_time
 
 if REPEAT_SIMULATION:
     np.savez(SAVE_PATH+"/times.npz",
@@ -151,7 +150,7 @@ def adjacent_values(vals, q1, q3):
 # plt.savefig(SAVE_PATH + "/run_time_independence1.svg")
 # plt.close()
 
-timepoints = np.arange(0, NUM_OUTER_REPETITIONS*NUM_INNER_REPETITIONS)
+timepoints = np.arange(0, REPETITIONS)
 time = np.reshape(times, (-1, ))
 mean = np.mean(time)
 diff = time - mean                   # Difference between data1 and data2
