@@ -16,7 +16,7 @@ After the successful installation of SIMPA, this package can be installed simila
 2. `cd simpa_paper_experiments`
 3. `git pull`
 
-Make sure that you have your preferred virtual environment activated and run in the `simpa_paper_experiments` folder:
+Make sure that you have your preferred virtual environment activated (tested with python 3.8.10) and run in the `simpa_paper_experiments` folder:
 1. `pip install -r requirements.txt`
 2. `python setup.py develop`
 
