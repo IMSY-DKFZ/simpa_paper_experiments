@@ -4,7 +4,7 @@ This repository contains the scripts needed to reproduce all the experiments/exa
 
 ## Installation
 Please follow the installation instructions of the SIMPA package:
-https://github.com/CAMI-DKFZ/simpa#simpa-install-instructions.
+https://github.com/CAMI-DKFZ/simpa#simpa-installation-instructions.
 
 In order to make sure that all experiments run smoothly, all the external tools required by SIMPA have to be installed as well:
 https://github.com/CAMI-DKFZ/simpa#external-tools-installation-instructions.

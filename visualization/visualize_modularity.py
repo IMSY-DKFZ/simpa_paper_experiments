@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 Computer Assisted Medical Interventions Group, DKFZ
+# SPDX-FileCopyrightText: 2021 Janek Groehl
+# SPDX-License-Identifier: MIT
+
 from simpa.visualisation.matplotlib_data_visualisation import visualise_data
 from simpa.utils.path_manager import PathManager
 import os
