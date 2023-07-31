@@ -298,36 +298,36 @@ def create_realistic_forearm_tissue(settings):
 
     tissue_dict = sp.Settings()
     tissue_dict[Tags.BACKGROUND] = background_dictionary
-    tissue_dict["muscle"] = sp.define_horizontal_layer_structure_settings(z_start_mm=1.5, thickness_mm=100,
+    tissue_dict["muscle"] = sp.define_horizontal_layer_structure_settings(z_start_mm=0, thickness_mm=100,
                                                                           molecular_composition=sp.TISSUE_LIBRARY.
-                                                                          soft_tissue(blood_volume_fraction=0.05),
+                                                                          soft_tissue(blood_volume_fraction=0.04),
                                                                           priority=1,
                                                                           consider_partial_volume=True,
                                                                           adhere_to_deformation=True)
-    tissue_dict["epidermis"] = sp.define_horizontal_layer_structure_settings(z_start_mm=1.5, thickness_mm=0.05,
+    tissue_dict["epidermis"] = sp.define_horizontal_layer_structure_settings(z_start_mm=0, thickness_mm=0.04,
                                                                              molecular_composition=sp.TISSUE_LIBRARY.
                                                                              epidermis(0.01),
                                                                              priority=8,
                                                                              consider_partial_volume=True,
                                                                              adhere_to_deformation=True)
     tissue_dict["main_artery"] = sp.define_circular_tubular_structure_settings(
-        tube_start_mm=[x_dim/2 - 4.4, 0, 5.5],
-        tube_end_mm=[x_dim/2 - 4.4, y_dim, 5.5],
+        tube_start_mm=[x_dim / 2 - 4.4, 0, 4],
+        tube_end_mm=[x_dim / 2 - 4.4, y_dim, 4],
         molecular_composition=sp.TISSUE_LIBRARY.blood(0.99),
         radius_mm=1.25, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True
     )
     tissue_dict["accomp_vein_1"] = sp.define_elliptical_tubular_structure_settings(
-        tube_start_mm=[x_dim/2 - 6.8, 0, 5.6],
-        tube_end_mm=[x_dim/2 - 6.8, y_dim, 5.6],
+        tube_start_mm=[x_dim / 2 - 6.8, 0, 4.1],
+        tube_end_mm=[x_dim / 2 - 6.8, y_dim, 4.1],
         molecular_composition=sp.TISSUE_LIBRARY.blood(0.9),
         radius_mm=0.6, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True,
         eccentricity=0.8,
     )
     tissue_dict["accomp_vein_2"] = sp.define_elliptical_tubular_structure_settings(
-        tube_start_mm=[x_dim / 2 - 1.25, 0, 5.6],
-        tube_end_mm=[x_dim / 2 - 1.25, y_dim, 5.6],
+        tube_start_mm=[x_dim / 2 - 1.25, 0, 4.1],
+        tube_end_mm=[x_dim / 2 - 1.25, y_dim, 4.1],
         molecular_composition=sp.TISSUE_LIBRARY.blood(0.6),
         radius_mm=0.65, priority=3, consider_partial_volume=True,
         adhere_to_deformation=True,
@@ -335,8 +335,8 @@ def create_realistic_forearm_tissue(settings):
     )
 
     tissue_dict["vessel_3"] = sp.define_elliptical_tubular_structure_settings(
-        tube_start_mm=[x_dim - 6.125, 0, 3.5],
-        tube_end_mm=[x_dim - 6.125, y_dim, 3.5],
+        tube_start_mm=[x_dim - 6.125, 0, 2],
+        tube_end_mm=[x_dim - 6.125, y_dim, 2],
         molecular_composition=sp.TISSUE_LIBRARY.blood(0.99),
         radius_mm=0.65, priority=3, consider_partial_volume=True,
         adhere_to_deformation=False,
@@ -344,8 +344,8 @@ def create_realistic_forearm_tissue(settings):
     )
 
     tissue_dict["vessel_4"] = sp.define_elliptical_tubular_structure_settings(
-        tube_start_mm=[5.2, 0, 4.5],
-        tube_end_mm=[5.2, y_dim, 4.5],
+        tube_start_mm=[5.2, 0, 3],
+        tube_end_mm=[5.2, y_dim, 3],
         molecular_composition=sp.TISSUE_LIBRARY.blood(0.5),
         radius_mm=0.1, priority=3, consider_partial_volume=True,
         adhere_to_deformation=False,
@@ -353,8 +353,8 @@ def create_realistic_forearm_tissue(settings):
     )
 
     tissue_dict["vessel_5"] = sp.define_elliptical_tubular_structure_settings(
-        tube_start_mm=[x_dim - 10.4, 0, 6],
-        tube_end_mm=[x_dim - 10.4, y_dim, 6],
+        tube_start_mm=[x_dim - 10.4, 0, 4.5],
+        tube_end_mm=[x_dim - 10.4, y_dim, 4.5],
         molecular_composition=sp.TISSUE_LIBRARY.blood(0.5),
         radius_mm=0.1, priority=3, consider_partial_volume=True,
         adhere_to_deformation=False,
@@ -362,8 +362,8 @@ def create_realistic_forearm_tissue(settings):
     )
 
     tissue_dict["vessel_6"] = sp.define_elliptical_tubular_structure_settings(
-        tube_start_mm=[x_dim - 14.4, 0, 3],
-        tube_end_mm=[x_dim - 14.4, y_dim, 3],
+        tube_start_mm=[x_dim - 14.4, 0, 1.5],
+        tube_end_mm=[x_dim - 14.4, y_dim, 1.5],
         molecular_composition=sp.TISSUE_LIBRARY.soft_tissue(blood_volume_fraction=0.2),
         radius_mm=0.1, priority=3, consider_partial_volume=True,
         adhere_to_deformation=False,
@@ -372,103 +372,3 @@ def create_realistic_forearm_tissue(settings):
 
     return tissue_dict
 
-
-def create_forearm_dataset_tissue(settings):
-    x_dim = settings[Tags.DIM_VOLUME_X_MM]
-    y_dim = settings[Tags.DIM_VOLUME_Y_MM]
-    z_dim = settings[Tags.DIM_VOLUME_Z_MM]
-
-    background_dictionary = sp.Settings()
-    background_dictionary[Tags.MOLECULE_COMPOSITION] = sp.TISSUE_LIBRARY.constant(1e-10, 1e-10, 1.0)
-    background_dictionary[Tags.STRUCTURE_TYPE] = Tags.BACKGROUND
-
-    tissue_dict = sp.Settings()
-    tissue_dict[Tags.BACKGROUND] = background_dictionary
-    tissue_dict["muscle"] = sp.define_horizontal_layer_structure_settings(z_start_mm=1.5, thickness_mm=100,
-                                                                          molecular_composition=sp.TISSUE_LIBRARY.
-                                                                          soft_tissue(blood_volume_fraction=0.05),
-                                                                          priority=1,
-                                                                          consider_partial_volume=True,
-                                                                          adhere_to_deformation=True)
-    tissue_dict["epidermis"] = sp.define_horizontal_layer_structure_settings(z_start_mm=1.5, thickness_mm=0.05,
-                                                                             molecular_composition=sp.TISSUE_LIBRARY.
-                                                                             epidermis(0.01),
-                                                                             priority=8,
-                                                                             consider_partial_volume=True,
-                                                                             adhere_to_deformation=True)
-
-    max_number_superficial_veins = 4
-    max_number_deep_veins = 4
-    max_number_arteries = 4
-
-    number_superficial_veins = np.random.randint(0, max_number_superficial_veins)
-    number_deep_veins = np.random.randint(0, max_number_deep_veins)
-    number_arteries = np.random.randint(1, max_number_arteries)
-
-    for superficial_vein in range(number_superficial_veins):
-        depth = sp.utils.calculate.positive_gauss(4 + sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_MEAN_MM,
-                                                  sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_STD_MM)
-        radius = sp.utils.calculate.positive_gauss(
-            sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DIAMETER_MEAN_MM/2,
-            sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DIAMETER_MEAN_MM/2)
-        oxygenation = sp.utils.calculate.positive_gauss(sp.OpticalTissueProperties.VENOUS_OXYGENATION,
-                                                        sp.OpticalTissueProperties.VENOUS_OXYGENATION_VARIATION)
-        x_position = np.random.uniform(5, x_dim-5)
-        eccentricity = np.random.uniform(0.2, 0.9)
-
-        tissue_dict[f"superficial_vein_{superficial_vein}"] = sp.define_elliptical_tubular_structure_settings(
-            tube_start_mm=[x_position, 0, depth],
-            tube_end_mm=[x_position, y_dim, depth],
-            molecular_composition=sp.TISSUE_LIBRARY.blood(oxygenation),
-            radius_mm=radius, priority=3, consider_partial_volume=True,
-            adhere_to_deformation=True,
-            eccentricity=eccentricity,
-        )
-
-    for deep_vein in range(number_deep_veins):
-        depth = np.random.uniform(4 + sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_MEAN_MM +
-                                  sp.MorphologicalTissueProperties.SUBCUTANEOUS_VEIN_DEPTH_STD_MM,
-                                  0.7 * z_dim)
-        radius = sp.utils.calculate.positive_gauss(sp.MorphologicalTissueProperties.MEDIAN_VEIN_DIAMETER_MEAN_MM / 2,
-                                                   sp.MorphologicalTissueProperties.MEDIAN_VEIN_DIAMETER_STD_MM / 2)
-        oxygenation = sp.utils.calculate.positive_gauss(sp.OpticalTissueProperties.VENOUS_OXYGENATION,
-                                                        sp.OpticalTissueProperties.VENOUS_OXYGENATION_VARIATION)
-        x_position = np.random.uniform(5, x_dim - 5)
-        eccentricity = np.random.uniform(0.2, 0.9)
-
-        tissue_dict[f"deep_vein_{deep_vein}"] = sp.define_elliptical_tubular_structure_settings(
-            tube_start_mm=[x_position, 0, depth],
-            tube_end_mm=[x_position, y_dim, depth],
-            molecular_composition=sp.TISSUE_LIBRARY.blood(oxygenation),
-            radius_mm=radius, priority=3, consider_partial_volume=True,
-            adhere_to_deformation=True,
-            eccentricity=eccentricity,
-        )
-
-    for artery in range(number_arteries):
-        depth = np.random.uniform(4 + 0.1 * z_dim,
-                                  0.6 * z_dim)
-        if np.random.uniform(0, 1) > 0.5:
-            radius = sp.utils.calculate.positive_gauss(
-                sp.MorphologicalTissueProperties.RADIAL_ARTERY_DIAMETER_MEAN_MM / 2,
-                sp.MorphologicalTissueProperties.RADIAL_ARTERY_DIAMETER_STD_MM / 2)
-        else:
-            radius = sp.utils.calculate.positive_gauss(
-                sp.MorphologicalTissueProperties.MEDIAN_ARTERY_DIAMETER_MEAN_MM / 2,
-                sp.MorphologicalTissueProperties.MEDIAN_ARTERY_DIAMETER_STD_MM / 2)
-
-        oxygenation = sp.utils.calculate.positive_gauss(sp.OpticalTissueProperties.ARTERIAL_OXYGENATION,
-                                                        sp.OpticalTissueProperties.ARTERIAL_OXYGENATION_VARIATION)
-        x_position = np.random.uniform(5, x_dim - 5)
-        eccentricity = np.random.uniform(0.2, 0.8)
-
-        tissue_dict[f"artery_{artery}"] = sp.define_elliptical_tubular_structure_settings(
-            tube_start_mm=[x_position, 0, depth],
-            tube_end_mm=[x_position, y_dim, depth],
-            molecular_composition=sp.TISSUE_LIBRARY.blood(oxygenation),
-            radius_mm=radius, priority=3, consider_partial_volume=True,
-            adhere_to_deformation=True,
-            eccentricity=eccentricity,
-        )
-
-    return tissue_dict

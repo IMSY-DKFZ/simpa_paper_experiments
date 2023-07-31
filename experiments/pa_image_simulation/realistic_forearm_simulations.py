@@ -62,6 +62,7 @@ seg_settings.set_acoustic_settings(create_basic_acoustic_settings(path_manager))
 seg_settings.set_reconstruction_settings(create_basic_reconstruction_settings(path_manager, SPACING))
 seg_settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_BMODE_AFTER_RECONSTRUCTION] = True
 seg_settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.RECONSTRUCTION_MODE] = Tags.RECONSTRUCTION_MODE_DIFFERENTIAL
+seg_settings[Tags.RECONSTRUCTION_MODEL_SETTINGS][Tags.SPACING_MM] = 0.1
 
 seg_settings["noise_initial_pressure"] = {
     Tags.NOISE_MEAN: 1,
@@ -167,7 +168,7 @@ with open(os.path.join(SAVE_PATH, "run_time.txt"), "w+") as out_file:
 
 orig_im, header = nrrd.read(REAL_IMAGE_PATH)
 orig_im = normalize_min_max(orig_im[:, :, 0])
-img_to_plot = np.fliplr(np.rot90(orig_im, 3))[:-1, :]
+img_to_plot = np.fliplr(np.rot90(orig_im, 3))
 img_plot = plt.imshow(img_to_plot)
 print(img_to_plot.shape)
 scale_bar = ScaleBar(SPACING, units="mm", location="lower left", font_properties={"family": "Cmr10", "size": 20})
